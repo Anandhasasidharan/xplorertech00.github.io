@@ -1,0 +1,45 @@
+---
+layout: default
+---
+
+<article class="post-full">
+  <h1>{{ page.title }}</h1>
+
+  <div class="post-meta">
+    <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %d, %Y" }}</time>
+    {% if page.author %} · by {{ page.author }}{% endif %}
+    {% if page.tags %}
+    <br>
+    <span style="margin-right: 4px;">Tags:</span>
+    {% for tag in page.tags %}
+    <span class="tag">{{ tag }}</span>
+    {% endfor %}
+    {% endif %}
+  </div>
+
+  <div class="post-content">
+    {{ content }}
+  </div>
+
+  <hr style="margin: 40px 0 20px; border-color: var(--border-glow);">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <div>
+      {% if page.previous.url %}
+      <a href="{{ page.previous.url | relative_url }}" class="btn btn-outline" style="font-size: 0.8rem;">← {{ page.previous.title | truncate: 40 }}</a>
+      {% endif %}
+    </div>
+    <div>
+      {% if page.next.url %}
+      <a href="{{ page.next.url | relative_url }}" class="btn btn-outline" style="font-size: 0.8rem;">{{ page.next.title | truncate: 40 }} →</a>
+      {% endif %}
+    </div>
+  </div>
+</article>
+
+{% if site.plausible_enabled and site.plausible_domain != "" %}
+<script>
+  // Track page views with Plausible custom events
+  plausible('pageview', { props: { type: 'post', slug: '{{ page.slug }}' } });
+</script>
+{% endif %}

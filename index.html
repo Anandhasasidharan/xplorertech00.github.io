@@ -1,0 +1,86 @@
+---
+layout: default
+title: Home
+permalink: /
+---
+
+<!-- HERO SECTION -->
+<section class="hero-section">
+  <h1 class="hero-title">{{ site.title }}</h1>
+  <p class="hero-subtitle">{{ site.pretext.hero_subtitle | default: site.tagline }}</p>
+  <p class="hero-tagline">{{ site.tagline }}</p>
+
+  {% if site.pretext.enabled %}
+  <!-- Pretext Interactive Canvas -->
+  <div class="pretext-hero">
+    <canvas id="pretext-hero-canvas" class="pretext-hero-canvas"></canvas>
+    <script src="{{ '/assets/js/pretext-hero.js' | relative_url }}"></script>
+  </div>
+  {% endif %}
+
+  <div class="hero-cta">
+    <a href="{{ '/blog/' | relative_url }}" class="btn btn-primary">Read Blog</a>
+    <a href="{{ '/projects/' | relative_url }}" class="btn btn-outline">View Projects</a>
+  </div>
+</section>
+
+<!-- FEATURE CARDS: Robotics × AI × Hacking -->
+<section class="features-grid">
+  <div class="feature-card">
+    <div class="feature-icon">🤖</div>
+    <h3>Robotics</h3>
+    <p>
+      Exploring embodied intelligence, real-time control systems, and the intersection
+      of hardware and software. From sensor fusion to autonomous navigation — building
+      machines that perceive and act in the physical world.
+    </p>
+  </div>
+
+  <div class="feature-card">
+    <div class="feature-icon">🧠</div>
+    <h3>Artificial Intelligence</h3>
+    <p>
+      Building interpretable Small Language Models (SLMs) for security-critical
+      applications. Researching agentic frameworks, GRPO training, and model
+      interpretability at the edge.
+    </p>
+  </div>
+
+  <div class="feature-card">
+    <div class="feature-icon">🔐</div>
+    <h3>Cybersecurity</h3>
+    <p>
+      Blue-team defense with full transparency. From vulnerability research to
+      autonomous security agents — every decision traced, every alert explained.
+      Trust no input. Verify all output.
+    </p>
+  </div>
+</section>
+
+<!-- RECENT POSTS -->
+<section style="margin-top: 60px;">
+  <h2 style="font-family: var(--font-display); color: var(--cyan); text-align: center; margin-bottom: 32px;">
+    :: Recent Posts ::
+  </h2>
+  <div class="post-list">
+    {% for post in site.posts limit:3 %}
+    <article class="post-card">
+      <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %d, %Y" }}</time>
+      <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+      <p class="post-excerpt">{{ post.excerpt | strip_html | truncate: 180 }}</p>
+      {% if post.tags %}
+      <div class="post-tags">
+        {% for tag in post.tags %}
+        <span class="tag">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </article>
+    {% else %}
+    <p class="text-center text-dim">No posts yet. Check back soon!</p>
+    {% endfor %}
+  </div>
+  <div class="text-center mt-20">
+    <a href="{{ '/blog/' | relative_url }}" class="btn btn-outline">All Posts →</a>
+  </div>
+</section>

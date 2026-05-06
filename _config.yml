@@ -1,0 +1,127 @@
+# ═══════════════════════════════════════════════════════════
+# SHADOW PROTOCOL — Site Configuration
+# Robotics × AI × Hacking — A cyberpunk portfolio
+# ═══════════════════════════════════════════════════════════
+
+title: SHADOW PROTOCOL
+tagline: "Code. Circuits. Chaos. — One Byte at a Time in the World of Cybersec"
+description: "Cybersecurity research, AI/ML engineering, and robotics experiments. Building interpretable SLM agents for blue-team defense."
+author: xplorertech
+email: xplorertech@proton.me
+
+# ── URL ──────────────────────────────────────────────────
+url: "https://xplorertech00.github.io"
+baseurl: ""
+repository: xplorertech00/xplorertech00.github.io
+
+# ── Analytics ─────────────────────────────────────────────
+google_analytics: ""   # e.g. G-XXXXXXXXXX
+plausible_domain: ""   # e.g. xplorertech00.github.io
+plausible_enabled: false
+plausible_self_hosted_url: ""
+
+# ── Theme Colors ──────────────────────────────────────────
+colors:
+  bg_primary: "#0a0a0f"
+  bg_secondary: "#111119"
+  accent_cyan: "#00f0ff"
+  accent_magenta: "#ff00ff"
+  accent_green: "#00ff41"
+  accent_amber: "#ffb800"
+  text_primary: "#e0e0e0"
+  text_dim: "#888899"
+  border_glow: "#1a1a2e"
+
+# ── Social ────────────────────────────────────────────────
+social:
+  github: xplorertech00
+  twitter: xplorertech00
+  linkedin: ""
+  youtube: ""
+  email: xplorertech@proton.me
+  rss: true
+
+# ── Blog ──────────────────────────────────────────────────
+paginate: 5
+paginate_path: "/blog/page:num/"
+date_format: "%B %d, %Y"
+
+# ── SEO ───────────────────────────────────────────────────
+lang: en
+timezone: Asia/Kolkata
+
+twitter:
+  username: xplorertech00
+  card: summary_large_image
+
+og:
+  image: "/assets/img/social-preview.jpg"
+  image_width: 1200
+  image_height: 630
+
+# ── Pretext ───────────────────────────────────────────────
+pretext:
+  enabled: true
+  hero_text: "SHADOW PROTOCOL"
+  hero_subtitle: "Robotics × AI × Hacking"
+  demo_pages: true
+
+# ── Build ─────────────────────────────────────────────────
+markdown: kramdown
+highlighter: rouge
+permalink: /:year/:month/:day/:title/
+
+kramdown:
+  input: GFM
+  syntax_highlighter_opts:
+    default_lang: plaintext
+    css_class: 'highlight'
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-paginate
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/
+  - README.md
+  - .gitignore
+  - .sass-cache/
+  - .jekyll-cache/
+  - .DS_Store
+  - package.json
+  - package-lock.json
+
+include:
+  - _pages
+
+# Collections
+collections:
+  projects:
+    output: true
+    permalink: /projects/:slug/
+
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: post
+      author: xplorertech
+      image: /assets/img/social-preview.jpg
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: page
+      author: xplorertech
+  - scope:
+      path: ""
+      type: "projects"
+    values:
+      layout: project
+      author: xplorertech

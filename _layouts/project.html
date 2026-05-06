@@ -1,0 +1,36 @@
+---
+layout: default
+---
+
+<article class="project-full">
+  <div class="page-header">
+    <h1>{{ page.title }}</h1>
+    {% if page.status %}
+    <span class="project-status {% if page.status == 'active' %}status-active{% else %}status-wip{% endif %}" style="font-size: 0.9rem;">
+      {% if page.status == 'active' %}● Active{% else %}◉ In Progress{% endif %}
+    </span>
+    {% endif %}
+  </div>
+
+  <div class="page-content">
+    {{ content }}
+
+    {% if page.tech %}
+    <h2 style="color: var(--cyan); margin-top: 40px;">Technologies</h2>
+    <div class="project-tech" style="margin-top: 12px;">
+      {% for tech in page.tech %}
+      <span class="tag">{{ tech }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if page.links %}
+    <h2 style="color: var(--cyan); margin-top: 40px;">Links</h2>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px;">
+      {% for link in page.links %}
+      <a href="{{ link.url }}" class="btn btn-outline" target="_blank" rel="noopener">{{ link.text }} →</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</article>

@@ -1,0 +1,61 @@
+---
+layout: default
+title: Blog
+permalink: /blog/
+---
+
+<div class="blog-header">
+  <h1>:: Blog ::</h1>
+  <p style="color: var(--text-dim); font-family: var(--font-mono); font-size: 0.9rem; margin-top: 8px;">
+    Cybersecurity • AI/ML • Robotics • Interpretability
+  </p>
+</div>
+
+<div class="post-list">
+  {% for post in paginator.posts %}
+  <article class="post-card">
+    <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%B %d, %Y" }}</time>
+    <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+    <p class="post-excerpt">{{ post.excerpt | strip_html | truncate: 200 }}</p>
+    {% if post.tags %}
+    <div class="post-tags">
+      {% for tag in post.tags %}
+      <span class="tag">{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </article>
+  {% else %}
+  <div class="text-center" style="padding: 60px 0;">
+    <p style="font-family: var(--font-mono); color: var(--text-dim); font-size: 1.1rem;">
+      No posts yet. Migrating from <span class="accent-cyan">xplorertech00.wordpress.com</span>...
+    </p>
+    <p style="color: var(--text-dim); font-size: 0.9rem;">
+      Run the WordPress export to populate content!
+    </p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if paginator.total_pages > 1 %}
+<div class="pagination">
+  {% if paginator.previous_page %}
+    <a href="{{ paginator.previous_page_path | relative_url }}">← Newer</a>
+  {% endif %}
+
+  {% for page in (1..paginator.total_pages) %}
+    {% if page == paginator.page %}
+      <span class="current">{{ page }}</span>
+    {% elsif page == 1 %}
+      <a href="{{ '/blog/' | relative_url }}">{{ page }}</a>
+    {% else %}
+      <a href="{{ site.paginate_path | relative_url | replace: ':num', page }}">{{ page }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if paginator.next_page %}
+    <a href="{{ paginator.next_page_path | relative_url }}">Older →</a>
+  {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,90 @@
+---
+layout: default
+title: Projects
+permalink: /projects/
+---
+
+<div class="page-header">
+  <h1>:: Projects ::</h1>
+  <p style="color: var(--text-dim); font-family: var(--font-mono); font-size: 0.9rem; margin-top: 8px;">
+    Research · Code · Hardware — What I'm Building
+  </p>
+</div>
+
+<div class="projects-grid">
+  {% for project in site.projects %}
+  <div class="project-card">
+    <h2>
+      <a href="{{ project.url | relative_url }}">{{ project.title }}</a>
+    </h2>
+
+    {% if project.status %}
+    <span class="project-status {% if project.status == 'active' %}status-active{% else %}status-wip{% endif %}">
+      {% if project.status == 'active' %}● Active{% else %}◉ In Progress{% endif %}
+    </span>
+    {% endif %}
+
+    <p>{{ project.excerpt | strip_html | truncate: 160 }}</p>
+
+    {% if project.tech %}
+    <div class="project-tech">
+      {% for tech in project.tech %}
+      <span class="tag">{{ tech }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <!-- Placeholder projects -->
+  <div class="project-card">
+    <h2>Blue-Team SLM + Agent Framework</h2>
+    <span class="project-status status-active">● Active</span>
+    <p>
+      Building an interpretable Small Language Model (3B-8B params) + agentic framework
+      for blue-team cybersecurity operations. Full reasoning trace on every decision,
+      structured audit logging, and cs-PFI post-hoc analysis.
+    </p>
+    <div class="project-tech">
+      <span class="tag">PyTorch</span>
+      <span class="tag">Unsloth</span>
+      <span class="tag">GRPO</span>
+      <span class="tag">TRL</span>
+      <span class="tag">ToolOrchestra</span>
+      <span class="tag">LLMs</span>
+    </div>
+  </div>
+
+  <div class="project-card">
+    <h2>Pretext — DOM-Free Text Layout Engine</h2>
+    <span class="project-status status-wip">◉ In Progress</span>
+    <p>
+      Procedural text layout system where glyphs are treated as geometry.
+      Text flows around arbitrary shapes, animates kinetically, and renders
+      via Canvas/WebGL — no DOM, no CSS layout engine.
+    </p>
+    <div class="project-tech">
+      <span class="tag">Canvas 2D</span>
+      <span class="tag">WebGL</span>
+      <span class="tag">TypeScript</span>
+      <span class="tag">Creative Coding</span>
+    </div>
+  </div>
+
+  <div class="project-card">
+    <h2>SHADOW PROTOCOL — This Site</h2>
+    <span class="project-status status-active">● Active</span>
+    <p>
+      Cybersecurity blog + portfolio built on GitHub Pages with a custom
+      cyberpunk theme. Integrates Pretext for kinetic typography demos.
+      Robotics × AI × Hacking aesthetic.
+    </p>
+    <div class="project-tech">
+      <span class="tag">Jekyll</span>
+      <span class="tag">GitHub Pages</span>
+      <span class="tag">CSS</span>
+      <span class="tag">Pretext</span>
+      <span class="tag">HTML5 Canvas</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>

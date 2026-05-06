@@ -1,0 +1,323 @@
+---
+layout: default
+title: Pretext Demos
+permalink: /pretext-demos/
+---
+
+<div class="page-header">
+  <h1>:: Pretext Demos ::</h1>
+  <p style="color: var(--text-dim); font-family: var(--font-mono); font-size: 0.9rem; margin-top: 8px;">
+    DOM-Free Text Layout · Kinetic Typography · Text as Geometry
+  </p>
+</div>
+
+<div class="page-content" style="max-width: 960px;">
+  <p style="text-align: center; color: var(--text-secondary); margin-bottom: 40px;">
+    Interactive demos built with <a href="https://github.com/chenglou/pretext" target="_blank">@chenglou/pretext</a> —
+    a 15KB zero-dependency library for measuring multiline text without the DOM.
+    Each demo shows text treated as geometry: flowing around obstacles, shattering
+    into particles, or animating kinetically.
+  </p>
+
+  <div class="pretext-demo-grid">
+    <!-- Demo 1: Orb Flow (hero reuse) -->
+    <div class="pretext-demo-card">
+      <canvas id="demo-orb" width="430" height="280"></canvas>
+      <div class="demo-info">
+        <h3>Orb Flow</h3>
+        <p>Text reflows around a drifting 3D wireframe orb. Click and drag the orb — the prose parts around it in real time.</p>
+        <span class="demo-tag">reflow-around-obstacle</span>
+      </div>
+    </div>
+
+    <!-- Demo 2: Shatter Type -->
+    <div class="pretext-demo-card">
+      <canvas id="demo-shatter" width="430" height="280"></canvas>
+      <div class="demo-info">
+        <h3>Shatter Type</h3>
+        <p>Every glyph is a particle. Click to explode — watch letters scatter, then magnetically return home.</p>
+        <span class="demo-tag">shatter-particles</span>
+      </div>
+    </div>
+
+    <!-- Demo 3: Kinetic Wave -->
+    <div class="pretext-demo-card">
+      <canvas id="demo-wave" width="430" height="280"></canvas>
+      <div class="demo-info">
+        <h3>Kinetic Wave</h3>
+        <p>Lines undulate like a sine wave. Each line is offset in time, creating a flowing typographic rhythm.</p>
+        <span class="demo-tag">kinetic-typography</span>
+      </div>
+    </div>
+
+    <!-- Demo 4: ASCII Mask Flow -->
+    <div class="pretext-demo-card">
+      <canvas id="demo-ascii" width="430" height="280"></canvas>
+      <div class="demo-info">
+        <h3>ASCII Mask Flow</h3>
+        <p>Text flows around a rasterized ASCII logo. The occupied cells become obstacle spans — measured, not magic.</p>
+        <span class="demo-tag">ascii-obstacle</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  prepareWithSegments,
+  layoutNextLineRange,
+  materializeLineRange,
+  walkLineRanges
+} from "https://esm.sh/@chenglou/pretext@0.0.6";
+
+function resizeCanvas(canvas, w, h) {
+  canvas.width = w * devicePixelRatio;
+  canvas.height = h * devicePixelRatio;
+  canvas.getContext('2d').setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+
+/* ── Demo 1: Orb Flow (simplified) ─────────────────────── */
+(() => {
+  const canvas = document.getElementById('demo-orb');
+  resizeCanvas(canvas, 430, 280);
+  const ctx = canvas.getContext('2d');
+  const W = 430, H = 280;
+  const prepared = prepareWithSegments(
+    "Security is a process not a product In the age of AI and quantum computing we build interpretable SLMs for blue team operations Every alert must be traceable from model output to raw packet capture Robotics teaches us that embodied intelligence demands real time",
+    '11px "JetBrains Mono", monospace'
+  );
+  const orb = { x: 200, y: 140, r: 45, vx: 0.3, vy: 0.2 };
+  let t = 0;
+
+  function draw() {
+    t += 0.016;
+    orb.x += orb.vx; orb.y += orb.vy;
+    if (orb.x - orb.r < 10 || orb.x + orb.r > W-10) orb.vx *= -1;
+    if (orb.y - orb.r < 10 || orb.y + orb.r > H-10) orb.vy *= -1;
+
+    ctx.fillStyle = '#111119'; ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(0,240,255,0.04)';
+    for (let x = 0; x < W; x += 30) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 30) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    // Wireframe orb
+    ctx.strokeStyle = 'rgba(0,240,255,0.3)'; ctx.lineWidth = 1;
+    for (let ring = 0; ring < 2; ring++) {
+      ctx.beginPath();
+      const offset = ring * Math.PI / 2 + t;
+      for (let i = 0; i < 36; i++) {
+        const a = (i/36)*Math.PI*2;
+        const x = orb.x + Math.cos(a) * orb.r;
+        const y = ring === 0 ? orb.y + Math.sin(a) * Math.cos(offset) * orb.r : orb.y + Math.sin(a) * orb.r;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.closePath(); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(0,240,255,0.7)'; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI*2); ctx.stroke();
+
+    // Flow text
+    ctx.fillStyle = '#ffb800'; ctx.font = '11px "JetBrains Mono", monospace';
+    let cursor = { segmentIndex: 0, graphemeIndex: 0 };
+    let y = 14;
+    while (y < H - 10) {
+      const dy = y - orb.y;
+      const inBand = Math.abs(dy) < orb.r + 4;
+      let x = 8, w = W - 16;
+      if (inBand) {
+        const half = Math.sqrt(Math.max(0, (orb.r+4)**2 - dy**2));
+        const lw = Math.max(0, orb.x-half-8);
+        const rw = Math.max(0, W-8-orb.x-half);
+        if (lw >= rw) { w = lw - 6; }
+        else { x = orb.x+half+6; w = rw - 6; }
+        if (w < 30) { y += 18; continue; }
+      }
+      const range = layoutNextLineRange(prepared, cursor, w);
+      if (!range) break;
+      ctx.fillText(materializeLineRange(prepared, range).text, x, y);
+      cursor = range.end; y += 18;
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── Demo 2: Shatter ───────────────────────────────────── */
+(() => {
+  const canvas = document.getElementById('demo-shatter');
+  resizeCanvas(canvas, 430, 280);
+  const ctx = canvas.getContext('2d');
+  const W = 430, H = 280;
+  const TEXT = "SHATTER";
+  const FONT = 'bold 48px "JetBrains Mono", monospace';
+  const prepared = prepareWithSegments(TEXT, FONT);
+  const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+  const particles = [];
+  let mouseX = W/2, mouseY = H/2;
+
+  walkLineRanges(prepared, W-40, (line) => {
+    const mat = materializeLineRange(prepared, line);
+    let x = 20;
+    for (const { segment } of seg.segment(mat.text)) {
+      const w = ctx.measureText(segment).width;
+      particles.push({ ch: segment, x, y: 100, vx: 0, vy: 0, hx: x, hy: 100, w });
+      x += w;
+    }
+  });
+
+  canvas.addEventListener('mousemove', e => { const r = canvas.getBoundingClientRect(); mouseX = e.clientX - r.left; mouseY = e.clientY - r.top; });
+
+  function draw() {
+    ctx.fillStyle = '#111119'; ctx.fillRect(0, 0, W, H);
+
+    for (const p of particles) {
+      const dx = p.x - mouseX, dy = p.y - mouseY;
+      const d = Math.hypot(dx, dy) || 1;
+      const f = Math.min(300, 600 / (d * 0.15 + 1));
+      p.vx += (dx / d) * f * 0.016;
+      p.vy += (dy / d) * f * 0.016;
+      p.vx *= 0.91; p.vy *= 0.91;
+      p.vx += (p.hx - p.x) * 0.04;
+      p.vy += (p.hy - p.y) * 0.04;
+      p.x += p.vx; p.y += p.vy;
+
+      ctx.fillStyle = `hsl(${280 + Math.abs(p.vx)*5}, 80%, 65%)`;
+      ctx.font = FONT;
+      ctx.fillText(p.ch, p.x, p.y);
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── Demo 3: Kinetic Wave ──────────────────────────────── */
+(() => {
+  const canvas = document.getElementById('demo-wave');
+  resizeCanvas(canvas, 430, 280);
+  const ctx = canvas.getContext('2d');
+  const W = 430, H = 280;
+
+  const lines = [
+    "protocol_activate();",
+    "target_acquisition();",
+    "exploit_chain.prepare();",
+    "payload.deliver();",
+    "persistence.establish();",
+    "exfil_data.stream();",
+    "cleanup.sweep();",
+    "mission.complete();",
+  ];
+
+  let t = 0;
+  function draw() {
+    t += 0.02;
+    ctx.fillStyle = '#111119'; ctx.fillRect(0, 0, W, H);
+
+    ctx.font = '14px "JetBrains Mono", monospace';
+    for (let i = 0; i < lines.length; i++) {
+      const phase = t + i * 0.8;
+      const y = 40 + i * 30 + Math.sin(phase) * 10;
+      const alpha = 0.5 + 0.5 * Math.sin(phase * 0.7);
+      ctx.fillStyle = `rgba(0, 255, 65, ${0.4 + alpha * 0.5})`;
+      ctx.fillText(lines[i], 30 + Math.sin(phase * 0.4) * 8, y);
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ── Demo 4: ASCII Mask Flow ───────────────────────────── */
+(() => {
+  const canvas = document.getElementById('demo-ascii');
+  resizeCanvas(canvas, 430, 280);
+  const ctx = canvas.getContext('2d');
+  const W = 430, H = 280;
+  const prepared = prepareWithSegments(
+    "protocol cyber defense attack surface kernel exploit rootkit memory corruption buffer overflow heap spray return oriented programming shellcode injection privilege escalation lateral movement persistence exfiltration",
+    '10px "JetBrains Mono", monospace'
+  );
+
+  // ASCII mask: "HACK" as a grid
+  const CELL_W = 10, CELL_H = 12;
+  const mask = new Uint8Array(43 * 23);
+  // Simple "H" block shape
+  const ox = 14, oy = 6;
+  const shape = [
+    "## ##", "# #", "### #", "# #", "## ##"
+  ];
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[r].length; c++) {
+      if (shape[r][c] === '#') {
+        mask[(oy+r)*43 + (ox+c)] = 1;
+      }
+    }
+  }
+
+  const obstacleRows = Array.from({ length: 23 }, () => []);
+  for (let r = 0; r < 23; r++) {
+    for (let c = 0; c < 43; c++) {
+      if (mask[r*43 + c]) {
+        const x0 = c * CELL_W, x1 = x0 + CELL_W;
+        const last = obstacleRows[r][obstacleRows[r].length - 1];
+        if (last && last[1] >= x0 - 2) last[1] = Math.max(last[1], x1 + 2);
+        else obstacleRows[r].push([x0 - 2, x1 + 2]);
+      }
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = '#111119'; ctx.fillRect(0, 0, W, H);
+
+    // Draw mask
+    for (let r = 0; r < 23; r++) {
+      for (let c = 0; c < 43; c++) {
+        if (mask[r*43 + c]) {
+          ctx.fillStyle = 'rgba(0, 240, 255, 0.15)';
+          ctx.fillRect(c*CELL_W, r*CELL_H, CELL_W-1, CELL_H-1);
+        }
+      }
+    }
+
+    // Flow text around mask
+    ctx.fillStyle = '#ffb800'; ctx.font = '10px "JetBrains Mono", monospace';
+    let cursor = { segmentIndex: 0, graphemeIndex: 0 };
+    let y = 8;
+    while (y < H - 8) {
+      const row = Math.floor(y / CELL_H);
+      const spans = obstacleRows[Math.max(0, Math.min(22, row))] || [];
+
+      let drawn = false;
+      let x = 4;
+
+      for (const [sx, ex] of spans) {
+        const w = sx - x;
+        if (w > 30) {
+          const range = layoutNextLineRange(prepared, cursor, w);
+          if (range) {
+            ctx.fillText(materializeLineRange(prepared, range).text, x, y + 12);
+            cursor = range.end;
+            drawn = true;
+          }
+        }
+        x = ex;
+      }
+
+      const w = W - x - 4;
+      if (w > 30) {
+        const range = layoutNextLineRange(prepared, cursor, w);
+        if (range) {
+          ctx.fillText(materializeLineRange(prepared, range).text, x, y + 12);
+          cursor = range.end;
+          drawn = true;
+        }
+      }
+
+      if (!drawn) break;
+      y += 14;
+    }
+  }
+  draw();
+})();
+</script>
