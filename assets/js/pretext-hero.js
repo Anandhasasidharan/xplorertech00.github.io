@@ -1,4 +1,3 @@
-console.log("pretext-hero.js loaded");
 /**
  * SHADOW PROTOCOL — Pretext Hero Canvas
  * Animated 3D wireframe orb with prose flowing around it.
@@ -7,8 +6,12 @@ console.log("pretext-hero.js loaded");
  * Pattern: Reflow around obstacle (variable-width column per row)
  * Visual: Dark cyberpunk — cyan wireframe orb, amber text, scanlines
  */
-(function() {
+(async () => {
   'use strict';
+
+  // Load Pretext library from esm.sh
+  const pretextModule = await import('https://esm.sh/@chenglou/pretext@0.0.6');
+  const { prepareWithSegments, layoutNextLineRange, materializeLineRange } = pretextModule;
 
   const canvas = document.getElementById('pretext-hero-canvas');
   if (!canvas) return;
@@ -28,19 +31,6 @@ console.log("pretext-hero.js loaded");
   }
   resize();
   window.addEventListener('resize', () => { resize(); redraw(); });
-
-  // ── Pretext import ───────────────────────────────────────
-  let prepareWithSegments, layoutNextLineRange, materializeLineRange;
-  let prepared = null;
-
-  async function loadPretext() {
-    const mod = await import('https://esm.sh/@chenglou/pretext@0.0.6');
-    prepareWithSegments = mod.prepareWithSegments;
-    layoutNextLineRange = mod.layoutNextLineRange;
-    materializeLineRange = mod.materializeLineRange;
-    initText();
-    redraw();
-  }
 
   // ── Prose corpus ─────────────────────────────────────────
   const CORPUS = [
@@ -64,6 +54,8 @@ console.log("pretext-hero.js loaded");
   const COL_W_RATIO = 0.92;
 
   const orb = { x: 0, y: 0, r: 80, vx: 0.4, vy: 0.25 };
+
+  let prepared = null;
 
   function initText() {
     prepared = prepareWithSegments(CORPUS, FONT);
@@ -163,7 +155,7 @@ console.log("pretext-hero.js loaded");
 
       if (inBand) {
         const half = Math.sqrt(Math.max(0, (orb.r * 1.05) ** 2 - dy ** 2));
-        const leftW  = Math.max(0, (orb.x - half) - COL_X);
+        const leftW = Math.max(0, (orb.x - half) - COL_X);
         const rightW = Math.max(0, (COL_X + colW) - (orb.x + half));
 
         if (leftW >= rightW) {
@@ -298,11 +290,10 @@ console.log("pretext-hero.js loaded");
   canvas.addEventListener('touchend', () => { mouseDown = false; });
 
   // ── Start ────────────────────────────────────────────────
-  loadPretext().then(() => {
-    orb.x = W * 0.5;
-    orb.y = H * 0.5;
-    resize();
-    redraw();
-  });
+  initText();
+  orb.x = W * 0.5;
+  orb.y = H * 0.5;
+  resize();
+  redraw();
 
 })();
