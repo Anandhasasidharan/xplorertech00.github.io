@@ -1,3 +1,4 @@
+console.log("pretext-hero.js loaded");
 /**
  * SHADOW PROTOCOL — Pretext Hero Canvas
  * Animated 3D wireframe orb with prose flowing around it.
