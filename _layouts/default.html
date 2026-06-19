@@ -99,11 +99,7 @@
         <a href="{{ '/about/' | relative_url }}" class="nav-link {% if page.url contains '/about/' %}active{% endif %}">
           <span class="nav-icon">🕵️</span> About
         </a>
-        {% if site.pretext.demo_pages %}
-        <a href="{{ '/pretext-demos/' | relative_url }}" class="nav-link {% if page.url contains '/pretext-demos/' %}active{% endif %}">
-          <span class="nav-icon">🔮</span> Demos
-        </a>
-        {% endif %}
+
       </div>
       <button class="nav-toggle" aria-label="Toggle menu">
         <span></span><span></span><span></span>

@@ -63,7 +63,7 @@ pretext:
   enabled: true
   hero_text: "SHADOW PROTOCOL"
   hero_subtitle: "Robotics × AI × Hacking"
-  demo_pages: true
+  demo_pages: false
 
 # ── Build ─────────────────────────────────────────────────
 markdown: kramdown
