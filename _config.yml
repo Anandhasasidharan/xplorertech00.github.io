@@ -41,10 +41,9 @@ social:
   email: xplorertech@proton.me
   rss: true
 
-# ── Blog ──────────────────────────────────────────────────
-paginate: 5
-paginate_path: "/blog/page:num/"
+# ── Blog (external) ───────────────────────────────────────
 date_format: "%B %d, %Y"
+blog_url: "https://xplorertech00.wordpress.com"
 
 # ── SEO ───────────────────────────────────────────────────
 lang: en
@@ -81,7 +80,7 @@ plugins:
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-sitemap
-  - jekyll-paginate
+  # - jekyll-paginate
 
 exclude:
   - Gemfile
@@ -95,6 +94,7 @@ exclude:
   - .DS_Store
   - package.json
   - package-lock.json
+  - _posts-archive/
 
 include:
   - _pages
@@ -106,13 +106,6 @@ collections:
     permalink: /projects/:slug/
 
 defaults:
-  - scope:
-      path: ""
-      type: "posts"
-    values:
-      layout: post
-      author: xplorertech
-      image: /assets/img/social-preview.jpg
   - scope:
       path: ""
       type: "pages"

@@ -90,7 +90,7 @@
         <a href="{{ '/' | relative_url }}" class="nav-link {% if page.url == '/' %}active{% endif %}">
           <span class="nav-icon">🏠</span> Home
         </a>
-        <a href="{{ '/blog/' | relative_url }}" class="nav-link {% if page.url contains '/blog/' %}active{% endif %}">
+        <a href="{{ site.blog_url }}" class="nav-link" target="_blank" rel="noopener">
           <span class="nav-icon">📝</span> Blog
         </a>
         <a href="{{ '/projects/' | relative_url }}" class="nav-link {% if page.url contains '/projects/' %}active{% endif %}">
@@ -126,7 +126,7 @@
       <div class="footer-col">
         <h3>Links</h3>
         <a href="{{ '/' | relative_url }}">Home</a>
-        <a href="{{ '/blog/' | relative_url }}">Blog</a>
+        <a href="{{ site.blog_url }}" target="_blank" rel="noopener">Blog</a>
         <a href="{{ '/projects/' | relative_url }}">Projects</a>
         <a href="{{ '/about/' | relative_url }}">About</a>
       </div>
