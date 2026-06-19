@@ -4,30 +4,48 @@ title: Home
 permalink: /
 ---
 
-<!-- HERO SECTION -->
+<!-- HERO -->
 <section class="hero-section">
-  <h1 class="hero-title">{{ site.title }}</h1>
   <p class="hero-subtitle">{{ site.pretext.hero_subtitle | default: site.tagline }}</p>
+  <h1 class="hero-title">{{ site.title }}</h1>
   <p class="hero-tagline">{{ site.tagline }}</p>
 
-  {% if site.pretext.enabled %}
-  <!-- Pretext Interactive Canvas -->
-  <div class="pretext-hero">
-    <canvas id="pretext-hero-canvas" class="pretext-hero-canvas"></canvas>
-    <script src="{{ '/assets/js/pretext-hero.js' | relative_url }}"></script>
-  </div>
-  {% endif %}
-
   <div class="hero-cta">
-    <a href="{{ '/blog/' | relative_url }}" class="btn btn-primary">Read Blog</a>
-    <a href="{{ '/projects/' | relative_url }}" class="btn btn-outline">View Projects</a>
+    <a href="{{ '/projects/' | relative_url }}" class="btn btn-primary">View Projects</a>
+    <a href="{{ site.blog_url }}" class="btn btn-outline" target="_blank" rel="noopener">Read Blog</a>
   </div>
 </section>
 
-<!-- FEATURE CARDS: Robotics × AI × Hacking -->
+<!-- TERMINAL COMMAND -->
+<div class="terminal-command">
+  <div class="terminal-command-header">
+    <span class="terminal-dot red"></span>
+    <span class="terminal-dot yellow"></span>
+    <span class="terminal-dot green"></span>
+    <span class="terminal-command-title">zsh — shadow-protocol</span>
+  </div>
+  <div class="terminal-command-body">
+    <code>$ curl -fsSL https://shadowprotocol.dev/agent.sh | bash</code>
+    <button class="btn-copy" onclick="navigator.clipboard?.writeText('curl -fsSL https://shadowprotocol.dev/agent.sh | bash')">copy</button>
+  </div>
+</div>
+
+{% if site.pretext.enabled %}
+<div class="pretext-hero">
+  <canvas id="pretext-hero-canvas" class="pretext-hero-canvas"></canvas>
+  <script src="{{ '/assets/js/pretext-hero.js' | relative_url }}"></script>
+</div>
+{% endif %}
+
+<!-- FEATURES -->
+<div class="section-header" style="margin-top: 80px;">
+  <h2>Robotics × AI × Hacking</h2>
+  <p>Three domains. One mission.</p>
+</div>
+
 <section class="features-grid">
   <div class="feature-card">
-    <div class="feature-icon">🤖</div>
+    <div class="feature-badge">🤖</div>
     <h3>Robotics</h3>
     <p>
       Exploring embodied intelligence, real-time control systems, and the intersection
@@ -37,7 +55,7 @@ permalink: /
   </div>
 
   <div class="feature-card">
-    <div class="feature-icon">🧠</div>
+    <div class="feature-badge">🧠</div>
     <h3>Artificial Intelligence</h3>
     <p>
       Building interpretable Small Language Models (SLMs) for security-critical
@@ -47,7 +65,7 @@ permalink: /
   </div>
 
   <div class="feature-card">
-    <div class="feature-icon">🔐</div>
+    <div class="feature-badge">🔐</div>
     <h3>Cybersecurity</h3>
     <p>
       Blue-team defense with full transparency. From vulnerability research to
@@ -57,13 +75,11 @@ permalink: /
   </div>
 </section>
 
-<!-- BLOG LINK -->
-<section style="margin-top: 60px; text-align: center;">
-  <h2 style="font-family: var(--font-display); color: var(--cyan); margin-bottom: 16px;">
-    :: Read the Blog ::
-  </h2>
-  <p style="color: var(--text-secondary); margin-bottom: 24px; max-width: 500px; margin-left: auto; margin-right: auto;">
-    Cybersecurity research, AI/ML deep dives, and robotics experiments — written in the open on WordPress.
+<!-- BLOG CTA -->
+<section class="blog-cta">
+  <h2>Read the Blog</h2>
+  <p>
+    Cybersecurity research, AI/ML deep dives, and robotics experiments — written in the open.
   </p>
   <a href="{{ site.blog_url }}" class="btn btn-primary" target="_blank" rel="noopener">
     Visit Blog →

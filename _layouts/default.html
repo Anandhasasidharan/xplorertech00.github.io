@@ -83,23 +83,14 @@
   <!-- Navigation -->
   <header class="site-header">
     <nav class="nav-container">
-      <a href="{{ '/' | relative_url }}" class="nav-logo glitch-text" data-text="{{ site.title }}">
+      <a href="{{ '/' | relative_url }}" class="nav-logo">
         {{ site.title }}
       </a>
       <div class="nav-links">
-        <a href="{{ '/' | relative_url }}" class="nav-link {% if page.url == '/' %}active{% endif %}">
-          <span class="nav-icon">🏠</span> Home
-        </a>
-        <a href="{{ site.blog_url }}" class="nav-link" target="_blank" rel="noopener">
-          <span class="nav-icon">📝</span> Blog
-        </a>
-        <a href="{{ '/projects/' | relative_url }}" class="nav-link {% if page.url contains '/projects/' %}active{% endif %}">
-          <span class="nav-icon">⚙️</span> Projects
-        </a>
-        <a href="{{ '/about/' | relative_url }}" class="nav-link {% if page.url contains '/about/' %}active{% endif %}">
-          <span class="nav-icon">🕵️</span> About
-        </a>
-
+        <a href="{{ '/' | relative_url }}" class="nav-link {% if page.url == '/' %}active{% endif %}">Home</a>
+        <a href="{{ site.blog_url }}" class="nav-link" target="_blank" rel="noopener">Blog</a>
+        <a href="{{ '/projects/' | relative_url }}" class="nav-link {% if page.url contains '/projects/' %}active{% endif %}">Projects</a>
+        <a href="{{ '/about/' | relative_url }}" class="nav-link {% if page.url contains '/about/' %}active{% endif %}">About</a>
       </div>
       <button class="nav-toggle" aria-label="Toggle menu">
         <span></span><span></span><span></span>
@@ -153,7 +144,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; {{ 'now' | date: "%Y" }} {{ site.author }}. Built with <span class="accent">⚡</span> on GitHub Pages. <span class="terminal-prompt">~/shadow-protocol$ _</span></p>
+      <p>&copy; {{ 'now' | date: "%Y" }} {{ site.author }}. Built with <span class="accent-cyan">⚡</span> on GitHub Pages. <span class="accent-green">~/shadow-protocol$ _</span></p>
     </div>
   </footer>
 
