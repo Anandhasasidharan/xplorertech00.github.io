@@ -11,9 +11,9 @@ permalink: /projects/
   </p>
 </div>
 
-<div class="projects-grid">
+<div class="projects-grid" id="projects-grid">
   {% for project in site.projects %}
-  <div class="project-card">
+  <div class="project-card" data-title="{{ project.title | escape }}" data-status="{{ project.status }}" data-excerpt="{{ project.excerpt | strip_html | escape }}" data-tech="{{ project.tech | join: ',' | escape }}">
     <h2>
       <a href="{{ project.url | relative_url }}">{{ project.title }}</a>
     </h2>
@@ -88,3 +88,67 @@ permalink: /projects/
   </div>
   {% endfor %}
 </div>
+
+<script>
+  (async () => {
+    const grid = document.getElementById('projects-grid');
+    if (!grid) return;
+
+    const cards = Array.from(grid.children);
+    if (cards.length < 2) return;
+
+    const module = await import('https://esm.sh/@chenglou/pretext@0.0.6');
+    const { prepare, layout } = module;
+
+    const COL_GAP = 24;
+    const CARD_PAD = 56;
+    const TAG_H = 28;
+
+    function arrange() {
+      const colWidth = cards[0].offsetWidth;
+      if (colWidth < 10) return;
+      const textW = colWidth - CARD_PAD;
+
+      const heights = cards.map((card) => {
+        const title = card.querySelector('h2');
+        const excerpt = card.querySelector('p');
+        const tags = card.querySelector('.project-tech');
+        let h = 64;
+
+        if (title) {
+          const titlePrepared = prepare(title.textContent, 'bold 19.2px "JetBrains Mono", monospace');
+          const titleLayout = layout(titlePrepared, textW, 26);
+          h += titleLayout.height;
+        }
+
+        if (excerpt) {
+          const exPrepared = prepare(excerpt.textContent, '14.4px Inter, sans-serif');
+          const exLayout = layout(exPrepared, textW, 23);
+          h += exLayout.height + 12;
+        }
+
+        if (tags) {
+          h += TAG_H + 12;
+        }
+
+        return h + 24;
+      });
+
+      const colHeights = [0, 0];
+      cards.forEach((card, i) => {
+        const col = colHeights[0] <= colHeights[1] ? 0 : 1;
+        card.style.position = 'absolute';
+        card.style.width = `calc(50% - ${COL_GAP / 2}px)`;
+        card.style.top = `${colHeights[col]}px`;
+        card.style.left = col === 0 ? '0' : `calc(50% + ${COL_GAP / 2}px)`;
+        colHeights[col] += heights[i] + COL_GAP;
+      });
+
+      grid.style.position = 'relative';
+      grid.style.height = `${Math.max(...colHeights)}px`;
+    }
+
+    arrange();
+    window.addEventListener('resize', arrange);
+  })();
+</script>

@@ -1,25 +1,15 @@
-/**
- * SHADOW PROTOCOL — Pretext Hero Canvas
- * Animated 3D wireframe orb with prose flowing around it.
- * Uses @chenglou/pretext for DOM-free text measurement and layout.
- *
- * Pattern: Reflow around obstacle (variable-width column per row)
- * Visual: Dark cyberpunk — cyan wireframe orb, amber text, scanlines
- */
 (async () => {
   'use strict';
 
-  // Load Pretext library from esm.sh
-  const pretextModule = await import('https://esm.sh/@chenglou/pretext@0.0.6');
-  const { prepareWithSegments, layoutNextLineRange, materializeLineRange } = pretextModule;
+  const module = await import('https://esm.sh/@chenglou/pretext@0.0.6');
+  const { prepareWithSegments, layoutNextLineRange, materializeLineRange } = module;
 
   const canvas = document.getElementById('pretext-hero-canvas');
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
-
-  // ── Responsive canvas ────────────────────────────────────
   let W, H;
+
   function resize() {
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
@@ -32,7 +22,6 @@
   resize();
   window.addEventListener('resize', () => { resize(); redraw(); });
 
-  // ── Prose corpus ─────────────────────────────────────────
   const CORPUS = [
     "Cybersecurity is not a product. It is a process — a continuous negotiation between threat and trust,",
     "exploit and patch, chaos and control. In the age of AI and quantum computing, the attack surface",
@@ -53,7 +42,7 @@
   const COL_X = 16;
   const COL_W_RATIO = 0.92;
 
-  const orb = { x: 0, y: 0, r: 80, vx: 0.4, vy: 0.25 };
+  const orb = { x: 0, y: 0, r: 72, vx: 0.35, vy: 0.2 };
 
   let prepared = null;
 
@@ -61,12 +50,8 @@
     prepared = prepareWithSegments(CORPUS, FONT);
   }
 
-  // ── Draw 3D wireframe orb ────────────────────────────────
   function drawWireframeOrb(cx, cy, r, t) {
-    // Outer sphere — rotate two orthogonal wireframe circles
     const rings = [];
-
-    // 3 rings at different rotations
     for (let ring = 0; ring < 3; ring++) {
       const offset = (ring * Math.PI) / 3 + t * 0.4;
       for (let i = 0; i < 48; i++) {
@@ -87,19 +72,11 @@
       }
     }
 
-    // Draw wireframe with glow
     ctx.save();
     for (let pass = 0; pass < 2; pass++) {
       ctx.beginPath();
-      if (pass === 0) {
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
-        ctx.lineWidth = 3;
-      } else {
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
-        ctx.lineWidth = 1.2;
-      }
-
-      // Connect rings in groups of 48 points each
+      ctx.strokeStyle = pass === 0 ? 'rgba(0, 240, 255, 0.12)' : 'rgba(0, 240, 255, 0.5)';
+      ctx.lineWidth = pass === 0 ? 3 : 1.2;
       for (let ring = 0; ring < 3; ring++) {
         const start = ring * 48;
         for (let i = 0; i < 48; i++) {
@@ -112,7 +89,6 @@
       ctx.stroke();
     }
 
-    // Center glow
     const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.6);
     gradient.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
     gradient.addColorStop(1, 'rgba(0, 240, 255, 0)');
@@ -121,7 +97,6 @@
     ctx.arc(cx, cy, r * 0.6, 0, Math.PI * 2);
     ctx.fill();
 
-    // Cross
     ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -130,21 +105,18 @@
     ctx.moveTo(cx + r * 0.15, cy - r * 0.15);
     ctx.lineTo(cx - r * 0.15, cy + r * 0.15);
     ctx.stroke();
-
     ctx.restore();
   }
 
-  // ── Draw text flowing around orb ─────────────────────────
-  function drawFlow(ctx) {
+  function drawFlow(ctx, t) {
     if (!prepared) return;
     const colW = W * COL_W_RATIO;
 
-    ctx.fillStyle = '#ffb800';
-    ctx.font = FONT;
     ctx.textBaseline = 'alphabetic';
 
     let cursor = { segmentIndex: 0, graphemeIndex: 0 };
     let y = 24;
+    let lineIdx = 0;
 
     while (y < H - 20) {
       const dy = y - orb.y;
@@ -157,27 +129,25 @@
         const half = Math.sqrt(Math.max(0, (orb.r * 1.05) ** 2 - dy ** 2));
         const leftW = Math.max(0, (orb.x - half) - COL_X);
         const rightW = Math.max(0, (COL_X + colW) - (orb.x + half));
-
-        if (leftW >= rightW) {
-          x = COL_X;
-          w = leftW - 10;
-        } else {
-          x = orb.x + half + 10;
-          w = rightW - 10;
-        }
+        if (leftW >= rightW) { x = COL_X; w = leftW - 10; }
+        else { x = orb.x + half + 10; w = rightW - 10; }
         if (w < 40) { y += LINE_H; continue; }
       }
 
       const range = layoutNextLineRange(prepared, cursor, w);
       if (!range) break;
       const line = materializeLineRange(prepared, range);
-      ctx.fillText(line.text, x, y);
+
+      const wave = Math.sin(t * 1.2 + lineIdx * 0.6) * 3;
+      ctx.fillStyle = `hsl(40, 100%, ${55 + Math.sin(t + lineIdx * 0.4) * 10}%)`;
+      ctx.font = FONT;
+      ctx.fillText(line.text, x + wave, y);
       cursor = range.end;
       y += LINE_H;
+      lineIdx++;
     }
   }
 
-  // ── Scanline effect ──────────────────────────────────────
   function drawScanlines() {
     ctx.save();
     ctx.globalCompositeOperation = 'overlay';
@@ -188,7 +158,6 @@
     ctx.restore();
   }
 
-  // ── Vignette ─────────────────────────────────────────────
   function drawVignette() {
     const gradient = ctx.createRadialGradient(W/2, H/2, H*0.4, W/2, H/2, H*0.9);
     gradient.addColorStop(0, 'rgba(10, 10, 15, 0)');
@@ -197,28 +166,21 @@
     ctx.fillRect(0, 0, W, H);
   }
 
-  // ── Animation loop ───────────────────────────────────────
   let time = 0;
-  let lastFrame = 0;
 
   function redraw() {
     time = performance.now() * 0.001;
 
-    // Update orb position (slow drift)
     orb.x += orb.vx;
     orb.y += orb.vy;
-
-    // Bounce off edges
     if (orb.x - orb.r < COL_X + 60) { orb.vx = Math.abs(orb.vx); }
     if (orb.x + orb.r > W - 20) { orb.vx = -Math.abs(orb.vx); }
     if (orb.y - orb.r < 30) { orb.vy = Math.abs(orb.vy); }
     if (orb.y + orb.r > H - 30) { orb.vy = -Math.abs(orb.vy); }
 
-    // Clear
     ctx.fillStyle = '#111119';
     ctx.fillRect(0, 0, W, H);
 
-    // Grid
     ctx.strokeStyle = 'rgba(0, 240, 255, 0.025)';
     ctx.lineWidth = 1;
     for (let x = 0; x < W; x += 40) {
@@ -234,29 +196,21 @@
       ctx.stroke();
     }
 
-    // Draw wireframe orb
     drawWireframeOrb(orb.x, orb.y, orb.r, time);
-
-    // Draw flowing text
-    drawFlow(ctx);
-
-    // Effects
+    drawFlow(ctx, time);
     drawScanlines();
     drawVignette();
 
     requestAnimationFrame(redraw);
   }
 
-  // ── Mouse interaction ────────────────────────────────────
   let mouseDown = false;
   canvas.addEventListener('mousedown', (e) => {
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
-    const d = Math.hypot(mx - orb.x, my - orb.y);
-    if (d < orb.r + 20) mouseDown = true;
+    if (Math.hypot(mx - orb.x, my - orb.y) < orb.r + 20) mouseDown = true;
   });
-
   canvas.addEventListener('mousemove', (e) => {
     if (!mouseDown) return;
     const rect = canvas.getBoundingClientRect();
@@ -265,19 +219,12 @@
     orb.vx *= 0.5;
     orb.vy *= 0.5;
   });
-
   canvas.addEventListener('mouseup', () => { mouseDown = false; });
   canvas.addEventListener('mouseleave', () => { mouseDown = false; });
-
-  // Touch support
   canvas.addEventListener('touchstart', (e) => {
     const rect = canvas.getBoundingClientRect();
-    const mx = e.touches[0].clientX - rect.left;
-    const my = e.touches[0].clientY - rect.top;
-    const d = Math.hypot(mx - orb.x, my - orb.y);
-    if (d < orb.r + 30) mouseDown = true;
+    if (Math.hypot(e.touches[0].clientX - rect.left - orb.x, e.touches[0].clientY - rect.top - orb.y) < orb.r + 30) mouseDown = true;
   });
-
   canvas.addEventListener('touchmove', (e) => {
     if (!mouseDown) return;
     const rect = canvas.getBoundingClientRect();
@@ -286,14 +233,11 @@
     orb.vx *= 0.5;
     orb.vy *= 0.5;
   });
-
   canvas.addEventListener('touchend', () => { mouseDown = false; });
 
-  // ── Start ────────────────────────────────────────────────
   initText();
   orb.x = W * 0.5;
   orb.y = H * 0.5;
   resize();
   redraw();
-
 })();
