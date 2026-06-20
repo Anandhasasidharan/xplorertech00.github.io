@@ -3,21 +3,21 @@ layout: default
 ---
 
 <article class="project-full">
-  <div class="page-header">
-    <h1>{{ page.title }}</h1>
-    {% if page.status %}
-    <span class="project-status {% if page.status == 'active' %}status-active{% else %}status-wip{% endif %}" style="font-size: 0.9rem;">
-      {% if page.status == 'active' %}● Active{% else %}◉ In Progress{% endif %}
-    </span>
+  <div class="project-hero">
+    <div class="project-hero-header">
+      <h1>{{ page.title }}</h1>
+      {% if page.status %}
+      <span class="project-status {% if page.status == 'active' %}status-active{% else %}status-wip{% endif %}">
+        {% if page.status == 'active' %}● Active{% else %}◉ Completed{% endif %}
+      </span>
+      {% endif %}
+    </div>
+    {% if page.description %}
+    <p class="project-description">{{ page.description }}</p>
     {% endif %}
-  </div>
-
-  <div class="page-content">
-    {{ content }}
 
     {% if page.tech %}
-    <h2 style="color: var(--cyan); margin-top: 40px;">Technologies</h2>
-    <div class="project-tech" style="margin-top: 12px;">
+    <div class="project-tech">
       {% for tech in page.tech %}
       <span class="tag">{{ tech }}</span>
       {% endfor %}
@@ -25,12 +25,15 @@ layout: default
     {% endif %}
 
     {% if page.links %}
-    <h2 style="color: var(--cyan); margin-top: 40px;">Links</h2>
-    <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px;">
+    <div class="project-links">
       {% for link in page.links %}
       <a href="{{ link.url }}" class="btn btn-outline" target="_blank" rel="noopener">{{ link.text }} →</a>
       {% endfor %}
     </div>
     {% endif %}
+  </div>
+
+  <div class="project-content">
+    {{ content }}
   </div>
 </article>

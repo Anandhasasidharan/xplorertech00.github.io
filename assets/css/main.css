@@ -615,6 +615,9 @@ a:hover {
 
 /* ── Projects ──────────────────────────────────────────── */
 .projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 24px;
   margin: 40px 0;
 }
 
@@ -624,8 +627,6 @@ a:hover {
   border-radius: 8px;
   padding: 28px;
   transition: all var(--transition-normal);
-  width: calc(50% - 12px);
-  margin-bottom: 24px;
 }
 .project-card:hover {
   border-color: var(--border-glow);
@@ -634,15 +635,8 @@ a:hover {
 }
 
 @media (max-width: 768px) {
-  .project-card {
-    width: 100% !important;
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-  }
   .projects-grid {
-    position: relative !important;
-    height: auto !important;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -688,6 +682,110 @@ a:hover {
 .project-full .page-content {
   max-width: 800px;
   margin: 0 auto;
+}
+
+/* ── Project Full Page ──────────────────────────────────── */
+.project-full {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.project-hero {
+  padding: 40px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+
+.project-hero-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.project-hero-header h1 {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--cyan);
+}
+
+.project-description {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  max-width: 700px;
+}
+
+.project-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.project-content h2 {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  color: var(--cyan);
+  margin: 48px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.project-content h3 {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--magenta);
+  margin: 32px 0 12px;
+}
+
+.project-content p {
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+
+.project-content ul, .project-content ol {
+  margin: 8px 0 16px 24px;
+}
+
+.project-content li {
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.project-content pre {
+  background: var(--bg-code);
+  border: 1px solid var(--border-glow);
+  border-radius: 8px;
+  padding: 20px;
+  overflow-x: auto;
+  margin: 16px 0 24px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.project-content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+.project-content code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--bg-code);
+  color: var(--green);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+.project-content strong {
+  color: var(--cyan);
 }
 
 /* ── Pagination ────────────────────────────────────────── */
