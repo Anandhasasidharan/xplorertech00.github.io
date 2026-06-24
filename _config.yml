@@ -6,8 +6,8 @@
 title: SHADOW PROTOCOL
 tagline: "Code. Circuits. Chaos. — One Byte at a Time in the World of Cybersec"
 description: "Cybersecurity research, AI/ML engineering, and robotics experiments. Building interpretable SLM agents for blue-team defense."
-author: xplorertech
-email: xplorertech@proton.me
+author: Anandhasasidharan
+email: anandhasasidharan492@gmail.com
 
 # ── URL ──────────────────────────────────────────────────
 url: "https://anandhasasidharan.github.io"
@@ -34,11 +34,11 @@ colors:
 
 # ── Social ────────────────────────────────────────────────
 social:
-  github: xplorertech00
+  github: Anandhasasidharan
   twitter: xplorertech00
-  linkedin: ""
+  linkedin: "in/asd01"
   youtube: ""
-  email: xplorertech@proton.me
+  email: anandhasasidharan492@gmail.com
   rss: true
 
 # ── Blog (external) ───────────────────────────────────────
@@ -111,10 +111,10 @@ defaults:
       type: "pages"
     values:
       layout: page
-      author: xplorertech
+      author: Anandhasasidharan
   - scope:
       path: ""
       type: "projects"
     values:
       layout: project
-      author: xplorertech# trigger rebuild
+      author: Anandhasasidharan# trigger rebuild
