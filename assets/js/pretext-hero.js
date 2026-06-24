@@ -213,12 +213,15 @@
   function redraw() {
     time = performance.now() * 0.001;
 
+    const headlineY = 40;
+    const headlineEnd = drawHeadline(headlineY);
+
     for (const o of orbs) {
       if (o.pinned) continue;
       o.x += o.vx;
       o.y += o.vy;
       if (o.x - o.r < 40 || o.x + o.r > W - 40) o.vx *= -1;
-      if (o.y - o.r < 80 || o.y + o.r > H - 40) o.vy *= -1;
+      if (o.y - o.r < headlineEnd + 10 || o.y + o.r > H - 40) o.vy *= -1;
     }
 
     drawBackground();
@@ -235,10 +238,7 @@
     }
     ctx.restore();
 
-    const headlineY = 40;
-    drawHeadline(headlineY);
-
-    drawBody(headlineY + 40);
+    drawBody(headlineEnd);
     drawOrbs(time);
 
     if (!paused) requestAnimationFrame(redraw);
@@ -322,10 +322,10 @@
   initText();
   resize();
   orbs[0].x = W * 0.3;
-  orbs[0].y = H * 0.45;
+  orbs[0].y = H * 0.5;
   orbs[1].x = W * 0.7;
   orbs[1].y = H * 0.55;
   orbs[2].x = W * 0.5;
-  orbs[2].y = H * 0.7;
+  orbs[2].y = H * 0.75;
   redraw();
 })();
