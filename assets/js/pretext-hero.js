@@ -179,17 +179,16 @@
       ctx.save();
 
       const gradient = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
-      gradient.addColorStop(0, 'rgba(196, 163, 90, 0.08)');
-      gradient.addColorStop(0.5, 'rgba(196, 163, 90, 0.04)');
+      gradient.addColorStop(0, 'rgba(196, 163, 90, 0.12)');
+      gradient.addColorStop(0.5, 'rgba(196, 163, 90, 0.05)');
       gradient.addColorStop(1, 'rgba(196, 163, 90, 0)');
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = `rgba(196, 163, 90, ${0.15 + Math.sin(t + i) * 0.05})`;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 6]);
+      ctx.strokeStyle = `rgba(196, 163, 90, ${0.22 + Math.sin(t + i) * 0.06})`;
+      ctx.lineWidth = 0.5;
       ctx.beginPath();
       ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
       ctx.stroke();
