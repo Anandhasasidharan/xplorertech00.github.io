@@ -20,224 +20,312 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   resize();
-  window.addEventListener('resize', () => { resize(); redraw(); });
+  window.addEventListener('resize', () => { resize(); });
 
-  const CORPUS = [
-    "Cybersecurity is not a product. It is a process — a continuous negotiation between threat and trust,",
-    "exploit and patch, chaos and control. In the age of AI and quantum computing, the attack surface",
-    "expands faster than our defenses. We build interpretable SLMs for blue-team operations because",
-    "black-box models cannot be trusted with security-critical decisions. Every alert, every log, every",
-    "anomaly must be traceable — from model output to raw packet capture. Robotics teaches us that",
-    "embodied intelligence demands real-time constraints. The same principles apply to autonomous agents",
-    "operating in adversarial environments. Offense informs defense. Red team exercises reveal gaps",
-    "that compliance checklists miss. But the future belongs to those who can reason about security",
-    "at the speed of machine learning — not faster, not slower, but with precision and transparency.",
-    "This is SHADOW PROTOCOL: where AI meets hacking meets hardware. One byte at a time, we map",
-    "the boundary between what can be broken and what must be protected. The adversary is always learning.",
-    "So are we. Welcome to the edge of the network. Mind the packet loss. Trust no input. Verify all output."
+  // ── Editorial content ───────────────────────────────
+  const HEADLINE = 'SHADOW PROTOCOL';
+
+  const BODY = [
+    "Cybersecurity is not a product — it is a process, a continuous negotiation between threat and trust, exploit and patch, chaos and control. In the age of AI and quantum computing, the attack surface expands faster than our defenses.",
+    "We build interpretable Small Language Models for blue-team operations because black-box models cannot be trusted with security-critical decisions. Every alert, every log, every anomaly must be traceable — from model output to raw packet capture.",
+    "Robotics teaches us that embodied intelligence demands real-time constraints. The same principles apply to autonomous agents operating in adversarial environments. Offense informs defense. Red team exercises reveal gaps that compliance checklists miss.",
+    "The future belongs to those who can reason about security at the speed of machine learning — with precision and transparency. This is SHADOW PROTOCOL: where AI meets hacking meets hardware. One byte at a time, we map the boundary between what can be broken and what must be protected."
   ].join(' ');
 
-  const FONT = '14px "JetBrains Mono", "Share Tech Mono", monospace';
-  const LINE_H = 22;
-  const COL_X = 16;
-  const COL_W_RATIO = 0.92;
+  const PULL_QUOTE = '"Trust no input. Verify all output."';
 
-  const orb = { x: 0, y: 0, r: 72, vx: 0.35, vy: 0.2 };
+  const FONT_BODY = '15px "Iowan Old Style", "Palatino Linotype", "Georgia", serif';
+  const FONT_PULL = 'italic 18px "Iowan Old Style", "Georgia", serif';
+  const LINE_H = 24;
+
+  // ── Orbs ────────────────────────────────────────────
+  const orbs = [
+    { x: 0, y: 0, r: 60, vx: 0.2, vy: 0.15, pinned: false },
+    { x: 0, y: 0, r: 40, vx: -0.18, vy: 0.22, pinned: false },
+    { x: 0, y: 0, r: 30, vx: 0.25, vy: -0.12, pinned: false },
+  ];
 
   let prepared = null;
+  let preparedPQ = null;
+  let paused = false;
 
   function initText() {
-    prepared = prepareWithSegments(CORPUS, FONT);
+    prepared = prepareWithSegments(BODY, FONT_BODY);
+    preparedPQ = prepareWithSegments(PULL_QUOTE, FONT_PULL);
   }
 
-  function drawWireframeOrb(cx, cy, r, t) {
-    const rings = [];
-    for (let ring = 0; ring < 3; ring++) {
-      const offset = (ring * Math.PI) / 3 + t * 0.4;
-      for (let i = 0; i < 48; i++) {
-        const angle = (i / 48) * Math.PI * 2;
-        let x, y;
-        if (ring === 0) {
-          x = Math.cos(angle) * r;
-          y = Math.sin(angle) * Math.cos(offset) * r;
-        } else if (ring === 1) {
-          x = Math.cos(angle) * Math.cos(offset + 0.8) * r;
-          y = Math.sin(angle) * r;
-        } else {
-          const a = angle + t * 0.3;
-          x = Math.cos(a) * Math.cos(offset + 1.6) * r;
-          y = Math.sin(a) * Math.cos(offset + 1.6) * r;
-        }
-        rings.push({ x: cx + x, y: cy + y });
-      }
-    }
-
+  // ── Draw editorial layout ───────────────────────────
+  function drawHeadline(yStart) {
     ctx.save();
-    for (let pass = 0; pass < 2; pass++) {
-      ctx.beginPath();
-      ctx.strokeStyle = pass === 0 ? 'rgba(0, 240, 255, 0.12)' : 'rgba(0, 240, 255, 0.5)';
-      ctx.lineWidth = pass === 0 ? 3 : 1.2;
-      for (let ring = 0; ring < 3; ring++) {
-        const start = ring * 48;
-        for (let i = 0; i < 48; i++) {
-          const p = rings[start + i];
-          const next = rings[start + (i + 1) % 48];
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(next.x, next.y);
-        }
-      }
-      ctx.stroke();
-    }
+    ctx.font = 'bold 52px "Iowan Old Style", "Georgia", serif';
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'alphabetic';
+    const m = ctx.measureText(HEADLINE);
+    const x = (W - m.width) / 2;
+    ctx.fillText(HEADLINE, x, yStart + 52);
+    ctx.restore();
+    return yStart + 70;
+  }
 
-    const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.6);
-    gradient.addColorStop(0, 'rgba(0, 240, 255, 0.15)');
-    gradient.addColorStop(1, 'rgba(0, 240, 255, 0)');
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r * 0.6, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx - r * 0.15, cy - r * 0.15);
-    ctx.lineTo(cx + r * 0.15, cy + r * 0.15);
-    ctx.moveTo(cx + r * 0.15, cy - r * 0.15);
-    ctx.lineTo(cx - r * 0.15, cy + r * 0.15);
-    ctx.stroke();
+  function drawDropCap(x, y, size) {
+    ctx.save();
+    ctx.font = `bold ${size}px "Iowan Old Style", "Georgia", serif`;
+    ctx.fillStyle = '#c4a35a';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('C', x, y);
     ctx.restore();
   }
 
-  function drawFlow(ctx, t) {
-    if (!prepared) return;
-    const colW = W * COL_W_RATIO;
+  function lineObstructed(y, orb) {
+    return Math.abs(y - orb.y) < orb.r * 1.1;
+  }
 
-    ctx.textBaseline = 'alphabetic';
+  function getLineWidth(y, xStart, maxW) {
+    let minX = xStart;
+    let maxX = xStart + maxW;
+
+    for (const orb of orbs) {
+      if (!lineObstructed(y, orb)) continue;
+      const dy = y - orb.y;
+      const half = Math.sqrt(Math.max(0, (orb.r * 1.1) ** 2 - dy * dy));
+      const obsLeft = orb.x - half;
+      const obsRight = orb.x + half;
+
+      if (obsLeft > minX && obsLeft < maxX) maxX = Math.min(maxX, obsLeft - 8);
+      if (obsRight < maxX && obsRight > minX) minX = Math.max(minX, obsRight + 8);
+    }
+    return { x: minX, w: Math.max(30, maxX - minX) };
+  }
+
+  function drawBody(firstLineY) {
+    if (!prepared) return;
 
     let cursor = { segmentIndex: 0, graphemeIndex: 0 };
-    let y = 24;
+    let y = firstLineY;
+    const COL_X = 60;
+    const COL_W = W - 120;
+    let isFirstPara = true;
+    let dropCapPlaced = false;
+    let pullQuotePlaced = false;
+
+    ctx.textBaseline = 'alphabetic';
     let lineIdx = 0;
 
-    while (y < H - 20) {
-      const dy = y - orb.y;
-      const inBand = Math.abs(dy) < orb.r * 1.05;
-
-      let x = COL_X;
-      let w = colW;
-
-      if (inBand) {
-        const half = Math.sqrt(Math.max(0, (orb.r * 1.05) ** 2 - dy ** 2));
-        const leftW = Math.max(0, (orb.x - half) - COL_X);
-        const rightW = Math.max(0, (COL_X + colW) - (orb.x + half));
-        if (leftW >= rightW) { x = COL_X; w = leftW - 10; }
-        else { x = orb.x + half + 10; w = rightW - 10; }
-        if (w < 40) { y += LINE_H; continue; }
-      }
+    while (y < H - 40) {
+      const { x, w } = getLineWidth(y, COL_X, COL_W);
+      if (w < 40) { y += LINE_H; continue; }
 
       const range = layoutNextLineRange(prepared, cursor, w);
       if (!range) break;
-      const line = materializeLineRange(prepared, range);
 
-      const wave = Math.sin(t * 1.2 + lineIdx * 0.6) * 3;
-      ctx.fillStyle = `hsl(40, 100%, ${55 + Math.sin(t + lineIdx * 0.4) * 10}%)`;
-      ctx.font = FONT;
-      ctx.fillText(line.text, x + wave, y);
+      const line = materializeLineRange(prepared, range);
+      const text = line.text;
+
+      if (isFirstPara && !dropCapPlaced && lineIdx === 0) {
+        dropCapPlaced = true;
+        ctx.save();
+        ctx.font = FONT_BODY;
+        ctx.fillStyle = '#e8e4dc';
+        ctx.fillText(text.slice(1), x + 36, y);
+        ctx.restore();
+        drawDropCap(x, y, 52);
+      } else {
+        ctx.save();
+        ctx.font = FONT_BODY;
+        ctx.fillStyle = '#e8e4dc';
+        ctx.fillText(text, x, y);
+        ctx.restore();
+      }
+
       cursor = range.end;
       y += LINE_H;
       lineIdx++;
+
+      // Insert pull quote
+      if (!pullQuotePlaced && lineIdx > 6 && y < H * 0.6) {
+        if (preparedPQ) {
+          const pqW = COL_W * 0.6;
+          const pqX = W - COL_X - pqW;
+          const pqRange = layoutNextLineRange(preparedPQ, { segmentIndex: 0, graphemeIndex: 0 }, pqW);
+          if (pqRange) {
+            const pq = materializeLineRange(preparedPQ, pqRange);
+            ctx.save();
+            ctx.fillStyle = '#c4a35a';
+            ctx.font = FONT_PULL;
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillText(pq.text, pqX, y);
+            ctx.restore();
+
+            ctx.save();
+            ctx.strokeStyle = '#6b5a3d';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(pqX - 12, y - 30);
+            ctx.lineTo(pqX - 12, y + 6);
+            ctx.stroke();
+            ctx.restore();
+
+            y += LINE_H + 8;
+            pullQuotePlaced = true;
+          }
+        }
+      }
     }
   }
 
-  function drawScanlines() {
-    ctx.save();
-    ctx.globalCompositeOperation = 'overlay';
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
-    for (let y = 0; y < H; y += 3) {
-      ctx.fillRect(0, y, W, 1);
+  function drawOrbs(t) {
+    for (let i = 0; i < orbs.length; i++) {
+      const o = orbs[i];
+      ctx.save();
+
+      const gradient = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+      gradient.addColorStop(0, 'rgba(196, 163, 90, 0.08)');
+      gradient.addColorStop(0.5, 'rgba(196, 163, 90, 0.04)');
+      gradient.addColorStop(1, 'rgba(196, 163, 90, 0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = `rgba(196, 163, 90, ${0.15 + Math.sin(t + i) * 0.05})`;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath();
+      ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.restore();
     }
-    ctx.restore();
   }
 
-  function drawVignette() {
-    const gradient = ctx.createRadialGradient(W/2, H/2, H*0.4, W/2, H/2, H*0.9);
-    gradient.addColorStop(0, 'rgba(10, 10, 15, 0)');
-    gradient.addColorStop(1, 'rgba(10, 10, 15, 0.85)');
+  // ── Background ───────────────────────────────────────
+  function drawBackground() {
+    const gradient = ctx.createRadialGradient(W / 2, H * 0.4, 0, W / 2, H * 0.4, H * 0.8);
+    gradient.addColorStop(0, '#0f0f14');
+    gradient.addColorStop(1, '#0a0a0c');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, W, H);
   }
 
+  // ── Animation ────────────────────────────────────────
   let time = 0;
 
   function redraw() {
     time = performance.now() * 0.001;
 
-    orb.x += orb.vx;
-    orb.y += orb.vy;
-    if (orb.x - orb.r < COL_X + 60) { orb.vx = Math.abs(orb.vx); }
-    if (orb.x + orb.r > W - 20) { orb.vx = -Math.abs(orb.vx); }
-    if (orb.y - orb.r < 30) { orb.vy = Math.abs(orb.vy); }
-    if (orb.y + orb.r > H - 30) { orb.vy = -Math.abs(orb.vy); }
+    for (const o of orbs) {
+      if (o.pinned) continue;
+      o.x += o.vx;
+      o.y += o.vy;
+      if (o.x - o.r < 40 || o.x + o.r > W - 40) o.vx *= -1;
+      if (o.y - o.r < 80 || o.y + o.r > H - 40) o.vy *= -1;
+    }
 
-    ctx.fillStyle = '#111119';
-    ctx.fillRect(0, 0, W, H);
+    drawBackground();
 
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.025)';
+    // Subtle grid
+    ctx.save();
+    ctx.strokeStyle = 'rgba(196, 163, 90, 0.02)';
     ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 40) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-      ctx.stroke();
+    for (let x = 0; x < W; x += 60) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
     }
-    for (let y2 = 0; y2 < H; y2 += 40) {
-      ctx.beginPath();
-      ctx.moveTo(0, y2);
-      ctx.lineTo(W, y2);
-      ctx.stroke();
+    for (let y = 0; y < H; y += 60) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
+    ctx.restore();
 
-    drawWireframeOrb(orb.x, orb.y, orb.r, time);
-    drawFlow(ctx, time);
-    drawScanlines();
-    drawVignette();
+    const headlineY = 40;
+    drawHeadline(headlineY);
 
-    requestAnimationFrame(redraw);
+    drawBody(headlineY + 40);
+    drawOrbs(time);
+
+    if (!paused) requestAnimationFrame(redraw);
   }
 
-  let mouseDown = false;
+  // ── Interaction ──────────────────────────────────────
+  let dragging = null;
+  let dragOffX = 0, dragOffY = 0;
+
+  function getPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    const ex = e.touches ? e.touches[0].clientX : e.clientX;
+    const ey = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: ex - rect.left, y: ey - rect.top };
+  }
+
+  function hitTest(px, py) {
+    for (let i = orbs.length - 1; i >= 0; i--) {
+      const o = orbs[i];
+      if (Math.hypot(px - o.x, py - o.y) < o.r + 15) return i;
+    }
+    return -1;
+  }
+
+  function togglePause() {
+    paused = !paused;
+    if (!paused) redraw();
+  }
+
   canvas.addEventListener('mousedown', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    if (Math.hypot(mx - orb.x, my - orb.y) < orb.r + 20) mouseDown = true;
+    const p = getPointer(e);
+    const idx = hitTest(p.x, p.y);
+    if (idx >= 0) {
+      dragging = idx;
+      dragOffX = p.x - orbs[idx].x;
+      dragOffY = p.y - orbs[idx].y;
+      orbs[idx].pinned = true;
+    } else {
+      togglePause();
+    }
   });
+
   canvas.addEventListener('mousemove', (e) => {
-    if (!mouseDown) return;
-    const rect = canvas.getBoundingClientRect();
-    orb.x = e.clientX - rect.left;
-    orb.y = e.clientY - rect.top;
-    orb.vx *= 0.5;
-    orb.vy *= 0.5;
+    if (dragging === null) return;
+    const p = getPointer(e);
+    orbs[dragging].x = p.x - dragOffX;
+    orbs[dragging].y = p.y - dragOffY;
   });
-  canvas.addEventListener('mouseup', () => { mouseDown = false; });
-  canvas.addEventListener('mouseleave', () => { mouseDown = false; });
+
+  canvas.addEventListener('mouseup', () => {
+    if (dragging !== null) orbs[dragging].pinned = false;
+    dragging = null;
+  });
+  canvas.addEventListener('mouseleave', () => {
+    if (dragging !== null) orbs[dragging].pinned = false;
+    dragging = null;
+  });
+
   canvas.addEventListener('touchstart', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    if (Math.hypot(e.touches[0].clientX - rect.left - orb.x, e.touches[0].clientY - rect.top - orb.y) < orb.r + 30) mouseDown = true;
+    const p = getPointer(e);
+    const idx = hitTest(p.x, p.y);
+    if (idx >= 0) {
+      dragging = idx;
+      dragOffX = p.x - orbs[idx].x;
+      dragOffY = p.y - orbs[idx].y;
+      orbs[idx].pinned = true;
+    }
   });
   canvas.addEventListener('touchmove', (e) => {
-    if (!mouseDown) return;
-    const rect = canvas.getBoundingClientRect();
-    orb.x = e.touches[0].clientX - rect.left;
-    orb.y = e.touches[0].clientY - rect.top;
-    orb.vx *= 0.5;
-    orb.vy *= 0.5;
+    if (dragging === null) return;
+    const p = getPointer(e);
+    orbs[dragging].x = p.x - dragOffX;
+    orbs[dragging].y = p.y - dragOffY;
   });
-  canvas.addEventListener('touchend', () => { mouseDown = false; });
+  canvas.addEventListener('touchend', () => {
+    if (dragging !== null) orbs[dragging].pinned = false;
+    dragging = null;
+  });
 
+  // ── Start ────────────────────────────────────────────
   initText();
-  orb.x = W * 0.5;
-  orb.y = H * 0.5;
   resize();
+  orbs[0].x = W * 0.3;
+  orbs[0].y = H * 0.45;
+  orbs[1].x = W * 0.7;
+  orbs[1].y = H * 0.55;
+  orbs[2].x = W * 0.5;
+  orbs[2].y = H * 0.7;
   redraw();
 })();

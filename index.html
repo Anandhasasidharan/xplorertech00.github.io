@@ -4,21 +4,15 @@ title: Home
 permalink: /
 ---
 
-<!-- HERO -->
-<section class="hero-section">
-  <p class="hero-subtitle">{{ site.pretext.hero_subtitle | default: site.tagline }}</p>
-  <h1 class="hero-title">{{ site.title }}</h1>
-  <p class="hero-tagline">{{ site.tagline }}</p>
-
-  <div class="hero-cta">
-    <a href="{{ '/projects/' | relative_url }}" class="btn btn-primary">View Projects</a>
-    <a href="{{ site.blog_url }}" class="btn btn-outline" target="_blank" rel="noopener">Read Blog</a>
-  </div>
-</section>
-
+<!-- HERO (Editorial Engine) -->
 {% if site.pretext.enabled %}
-<div class="pretext-hero">
+<div class="pretext-hero editorial-hero">
   <canvas id="pretext-hero-canvas" class="pretext-hero-canvas"></canvas>
+  <div class="hint">Drag the orbs · Click to pause · Zero DOM reads</div>
+  <div class="hero-cta editorial-cta">
+    <a href="{{ '/projects/' | relative_url }}" class="btn btn-primary">View Projects</a>
+    <a href="{{ site.blog_url }}" class="btn btn-outline" target="_blank" rel="noopener">Read Blog →</a>
+  </div>
   <script src="{{ '/assets/js/pretext-hero.js' | relative_url }}"></script>
 </div>
 {% endif %}

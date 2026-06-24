@@ -1,29 +1,31 @@
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #111119;
-  --bg-card: #151520;
-  --bg-code: #0d0d14;
+  --bg-primary: #0a0a0c;
+  --bg-secondary: #0f0f14;
+  --bg-card: #121216;
+  --bg-code: #0d0d12;
 
   --cyan: #00f0ff;
   --magenta: #ff00ff;
   --green: #00ff41;
   --amber: #ffb800;
+  --gold: #c4a35a;
   --red: #ff3333;
   --purple: #7b2fff;
 
-  --text-primary: #e0e0e0;
-  --text-secondary: #aaaacc;
-  --text-dim: #666688;
+  --text-primary: #e8e4dc;
+  --text-secondary: #b0aba0;
+  --text-dim: #6b685e;
 
-  --border: #1a1a2e;
-  --border-glow: #2a2a4e;
-  --border-cyan: rgba(0, 240, 255, 0.3);
+  --border: #1a1920;
+  --border-glow: #2a2835;
+  --border-gold: rgba(196, 163, 90, 0.2);
 
   --font-mono: 'JetBrains Mono', 'Share Tech Mono', ui-monospace, monospace;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', 'Georgia', serif;
   --font-display: 'JetBrains Mono', monospace;
 
-  --shadow-glow: 0 0 20px rgba(0, 240, 255, 0.15);
+  --shadow-glow: 0 0 20px rgba(196, 163, 90, 0.12);
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
 
   --transition-fast: 150ms ease;
@@ -41,20 +43,18 @@ body {
   font-family: var(--font-sans);
   background: var(--bg-primary);
   color: var(--text-primary);
-  line-height: 1.7;
-  min-height: 100vh;
-  overflow-x: hidden;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 a {
-  color: var(--cyan);
+  color: var(--gold);
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 a:hover {
-  color: var(--magenta);
+  color: var(--amber);
 }
 
 /* ── Grid Background ───────────────────────────────────── */
@@ -64,8 +64,8 @@ a:hover {
   z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(196, 163, 90, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 163, 90, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
 }
@@ -77,8 +77,8 @@ a:hover {
   pointer-events: none;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 240, 255, 0.015) 0px,
-    rgba(0, 240, 255, 0.015) 1px,
+    rgba(196, 163, 90, 0.015) 0px,
+    rgba(196, 163, 90, 0.015) 1px,
     transparent 1px,
     transparent 3px
   );
@@ -89,7 +89,7 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(10, 10, 15, 0.85);
+  background: rgba(10, 10, 12, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
@@ -109,9 +109,9 @@ a:hover {
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  background: linear-gradient(135deg, var(--cyan), var(--magenta));
+  background: linear-gradient(135deg, var(--gold), var(--amber));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -131,10 +131,10 @@ a:hover {
   letter-spacing: 0.02em;
 }
 .nav-link:hover {
-  color: var(--cyan);
+  color: var(--gold);
 }
 .nav-link.active {
-  color: var(--cyan);
+  color: var(--gold);
 }
 
 .nav-toggle {
@@ -150,7 +150,7 @@ a:hover {
   display: block;
   width: 22px;
   height: 2px;
-  background: var(--cyan);
+  background: var(--gold);
   transition: all var(--transition-normal);
 }
 .nav-toggle.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
@@ -189,48 +189,44 @@ a:hover {
   min-height: calc(100vh - 64px - 250px);
 }
 
-/* ── Hero ──────────────────────────────────────────────── */
-.hero-section {
-  text-align: center;
-  padding: 100px 0 40px;
+/* ── Editorial Hero ─────────────────────────────────── */
+.editorial-hero {
+  padding: 40px 0 0;
 }
 
-.hero-title {
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 8vw, 6rem);
+.editorial-cta {
+  margin-top: 28px;
+}
+
+/* ── Editorial Typography ──────────────────────────── */
+.editorial-body {
+  font-family: var(--font-serif);
+  color: var(--text-primary);
+  line-height: 1.7;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.editorial-dropcap::first-letter {
+  font-family: var(--font-serif);
+  font-size: 3.2em;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1.1;
-  background: linear-gradient(135deg, var(--cyan) 0%, var(--magenta) 50%, var(--amber) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 16px;
+  color: var(--gold);
+  float: left;
+  line-height: 0.85;
+  margin-right: 10px;
+  margin-top: 4px;
 }
 
-.hero-subtitle {
-  font-family: var(--font-mono);
+.editorial-pullquote {
+  font-family: var(--font-serif);
+  font-style: italic;
   font-size: 1.15rem;
-  color: var(--text-dim);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-
-.hero-tagline {
-  font-size: 1rem;
-  color: var(--text-secondary);
-  max-width: 560px;
-  margin: 0 auto 32px;
-  line-height: 1.6;
-}
-
-.hero-cta {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 32px;
+  color: var(--gold);
+  border-left: 3px solid var(--gold);
+  padding-left: 18px;
+  margin: 24px 0 24px auto;
+  max-width: 60%;
 }
 
 /* ── Buttons ───────────────────────────────────────────── */
@@ -246,15 +242,15 @@ a:hover {
 }
 
 .btn-primary {
-  background: var(--cyan);
-  color: var(--bg-primary);
-  border-color: var(--cyan);
+  background: var(--gold);
+  color: #0a0a0c;
+  border-color: var(--gold);
   font-weight: 600;
 }
 .btn-primary:hover {
   background: transparent;
-  color: var(--cyan);
-  box-shadow: 0 0 24px rgba(0, 240, 255, 0.25);
+  color: var(--gold);
+  box-shadow: 0 0 24px rgba(196, 163, 90, 0.25);
 }
 
 .btn-outline {
@@ -263,9 +259,9 @@ a:hover {
   border-color: var(--border);
 }
 .btn-outline:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
-  background: rgba(0, 240, 255, 0.05);
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(196, 163, 90, 0.05);
 }
 
 /* ── Section Headers ───────────────────────────────────── */
@@ -275,10 +271,12 @@ a:hover {
 }
 
 .section-header h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-serif);
   font-size: 2rem;
+  font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 8px;
+  letter-spacing: -0.02em;
 }
 
 .section-header p {
@@ -319,8 +317,8 @@ a:hover {
   border-radius: 12px;
   margin-bottom: 20px;
   font-size: 1.4rem;
-  background: rgba(0, 240, 255, 0.06);
-  border: 1px solid rgba(0, 240, 255, 0.1);
+  background: rgba(196, 163, 90, 0.06);
+  border: 1px solid rgba(196, 163, 90, 0.1);
 }
 
 .feature-card h3 {
@@ -462,7 +460,7 @@ a:hover {
   color: var(--text-primary);
 }
 .post-card h2 a:hover {
-  color: var(--cyan);
+  color: var(--gold);
 }
 
 .post-card .post-excerpt {
@@ -496,7 +494,7 @@ a:hover {
 .post-full h1 {
   font-family: var(--font-display);
   font-size: 2.2rem;
-  color: var(--cyan);
+  color: var(--gold);
   margin-bottom: 8px;
 }
 
@@ -516,7 +514,7 @@ a:hover {
 
 .post-content h2 {
   font-family: var(--font-mono);
-  color: var(--cyan);
+  color: var(--gold);
   margin: 40px 0 16px;
   font-size: 1.5rem;
 }
@@ -565,16 +563,16 @@ a:hover {
 }
 
 .post-content blockquote {
-  border-left: 3px solid var(--cyan);
+  border-left: 3px solid var(--gold);
   padding: 12px 20px;
   margin: 20px 0;
-  background: rgba(0, 240, 255, 0.05);
+  background: rgba(196, 163, 90, 0.05);
   border-radius: 0 6px 6px 0;
   color: var(--text-secondary);
   font-style: italic;
 }
 
-.post-content strong { color: var(--cyan); }
+.post-content strong { color: var(--gold); }
 
 .post-content img {
   max-width: 100%;
@@ -590,7 +588,7 @@ a:hover {
 }
 
 .post-content a {
-  border-bottom: 1px dashed var(--cyan);
+  border-bottom: 1px dashed var(--gold);
 }
 .post-content a:hover {
   border-bottom-style: solid;
@@ -605,7 +603,7 @@ a:hover {
 .page-header h1 {
   font-family: var(--font-display);
   font-size: 2.5rem;
-  color: var(--cyan);
+  color: var(--gold);
 }
 
 .page-content {
@@ -643,7 +641,7 @@ a:hover {
 .project-card h2 {
   font-family: var(--font-mono);
   font-size: 1.2rem;
-  color: var(--cyan);
+  color: var(--gold);
   margin-bottom: 8px;
 }
 
@@ -707,7 +705,7 @@ a:hover {
 .project-hero-header h1 {
   font-family: var(--font-display);
   font-size: 2.5rem;
-  color: var(--cyan);
+  color: var(--gold);
 }
 
 .project-description {
@@ -728,7 +726,7 @@ a:hover {
 .project-content h2 {
   font-family: var(--font-mono);
   font-size: 1.4rem;
-  color: var(--cyan);
+  color: var(--gold);
   margin: 48px 0 16px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
@@ -785,7 +783,7 @@ a:hover {
 }
 
 .project-content strong {
-  color: var(--cyan);
+  color: var(--gold);
 }
 
 /* ── Pagination ────────────────────────────────────────── */
@@ -804,14 +802,14 @@ a:hover {
   font-size: 0.85rem;
 }
 .pagination a:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
-  background: rgba(0, 240, 255, 0.05);
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(196, 163, 90, 0.05);
 }
 .pagination .current {
-  background: var(--cyan);
+  background: var(--gold);
   color: var(--bg-primary);
-  border-color: var(--cyan);
+  border-color: var(--gold);
   font-weight: 600;
 }
 
@@ -847,7 +845,7 @@ a:hover {
   font-size: 0.85rem;
   margin-bottom: 8px;
 }
-.footer-col a:hover { color: var(--cyan); }
+.footer-col a:hover { color: var(--gold); }
 
 .footer-tagline {
   font-size: 0.85rem;
@@ -869,9 +867,9 @@ a:hover {
   align-items: center;
 }
 .social-links a:hover {
-  color: var(--cyan);
-  border-color: var(--cyan);
-  background: rgba(0, 240, 255, 0.05);
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(196, 163, 90, 0.05);
 }
 
 .footer-bottom {
@@ -918,10 +916,11 @@ a:hover {
 }
 
 .terminal-box .prompt {
-  color: var(--cyan);
+  color: var(--gold);
 }
 
 /* ── Utilities ─────────────────────────────────────────── */
+.accent-gold { color: var(--gold); }
 .accent-cyan { color: var(--cyan); }
 .accent-magenta { color: var(--magenta); }
 .accent-green { color: var(--green); }
@@ -938,10 +937,10 @@ a:hover {
   background: var(--border);
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--cyan); }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
 /* ── Selection ─────────────────────────────────────────── */
 ::selection {
-  background: rgba(0, 240, 255, 0.25);
-  color: var(--cyan);
+  background: rgba(196, 163, 90, 0.25);
+  color: var(--gold);
 }

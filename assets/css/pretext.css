@@ -1,30 +1,41 @@
-.pretext-hero {
+.editorial-hero {
   position: relative;
   width: 100%;
-  max-width: 900px;
+  max-width: 100%;
   margin: 0 auto;
 }
 
-.pretext-hero canvas {
+.editorial-hero canvas {
   display: block;
   width: 100%;
-  height: 320px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-secondary);
+  height: 580px;
+  border-radius: 0;
+  background: radial-gradient(ellipse at 50% 40%, #0f0f14 0%, #0a0a0c 100%);
 }
 
-.pretext-hero::after {
-  content: 'Click & drag the orb — text reflows in real time';
-  display: block;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  margin-top: 8px;
-  opacity: 0.6;
+.editorial-cta {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.editorial-hero .hint {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font: 400 12px/1 'Helvetica Neue', Arial, sans-serif;
+  color: rgba(255,255,255,0.2);
+  background: rgba(0,0,0,0.45);
+  padding: 6px 16px;
+  border-radius: 999px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 20;
 }
 
 @media (max-width: 768px) {
-  .pretext-hero canvas { height: 220px; }
+  .editorial-hero canvas { height: 420px; }
+  .editorial-hero .hint { display: none; }
 }
