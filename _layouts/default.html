@@ -86,7 +86,7 @@
       <a href="{{ '/' | relative_url }}" class="nav-logo">
         {{ site.title }}
       </a>
-      <div class="nav-links">
+      <div class="nav-links" role="navigation" aria-label="Main navigation">
         <a href="{{ '/' | relative_url }}" class="nav-link {% if page.url == '/' %}active{% endif %}">Home</a>
         <a href="{{ site.blog_url }}" class="nav-link" target="_blank" rel="noopener">Blog</a>
         <a href="{{ '/projects/' | relative_url }}" class="nav-link {% if page.url contains '/projects/' %}active{% endif %}">Projects</a>

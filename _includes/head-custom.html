@@ -1,9 +1,44 @@
-{% comment %} ----- Load Pretext library via unpkg (UMD build) ----- {% endcomment %}
-<link rel="stylesheet" href="https://unpkg.com/@chenglou/pretext@0.0.6/dist/pretext.css">
-<script src="https://unpkg.com/@chenglou/pretext@0.0.6/dist/pretext.iife.js"></script>
-<script>
-  // Ensure Pretext is exposed globally (some UMD builds need this)
-  if (typeof window.Pretext === 'undefined' && typeof pretextDefault !== 'undefined') {
-    window.Pretext = pretextDefault;
-  }
+<!-- Search Console Verification -->
+{% if site.search_console.google %}
+<meta name="google-site-verification" content="{{ site.search_console.google }}">
+{% endif %}
+{% if site.search_console.bing %}
+<meta name="msvalidate.01" content="{{ site.search_console.bing }}">
+{% endif %}
+
+<!-- JSON-LD Structured Data: WebSite + Person -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "{{ site.title }}",
+      "url": "{{ site.url }}{{ site.baseurl }}/",
+      "description": "{{ site.description | escape }}",
+      "author": {
+        "@type": "Person",
+        "name": "{{ site.author }}",
+        "email": "{{ site.social.email }}",
+        "url": "{{ site.url }}{{ site.baseurl }}/",
+        "sameAs": [
+          "https://github.com/{{ site.social.github }}",
+          "https://x.com/{{ site.social.twitter }}",
+          "https://linkedin.com/{{ site.social.linkedin }}"
+        ]
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "{{ site.author }}",
+      "email": "{{ site.social.email }}",
+      "url": "{{ site.url }}{{ site.baseurl }}/",
+      "sameAs": [
+        "https://github.com/{{ site.social.github }}",
+        "https://x.com/{{ site.social.twitter }}",
+        "https://linkedin.com/{{ site.social.linkedin }}"
+      ]
+    }
+  ]
+}
 </script>

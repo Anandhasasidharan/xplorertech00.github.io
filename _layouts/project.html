@@ -2,7 +2,41 @@
 layout: default
 ---
 
-<article class="project-full">
+<!-- JSON-LD: BreadcrumbList + Article -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "{{ site.url }}{{ site.baseurl }}/" },
+        { "@type": "ListItem", "position": 2, "name": "Projects", "item": "{{ site.url }}{{ site.baseurl }}/projects/" },
+        { "@type": "ListItem", "position": 3, "name": "{{ page.title | escape }}", "item": "{{ site.url }}{{ site.baseurl }}{{ page.url }}" }
+      ]
+    },
+    {
+      "@type": "Article",
+      "headline": "{{ page.title | escape }}",
+      "description": "{{ page.description | default: page.excerpt | strip_html | escape }}",
+      "author": {
+        "@type": "Person",
+        "name": "{{ site.author }}",
+        "url": "https://github.com/{{ site.social.github }}"
+      },
+      "url": "{{ site.url }}{{ site.baseurl }}{{ page.url }}",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ site.url }}{{ site.baseurl }}{{ page.url }}"
+      },
+      "datePublished": "{{ page.date | default: site.time | date_to_xmlschema }}",
+      "dateModified": "{{ page.modified_date | default: page.date | default: site.time | date_to_xmlschema }}"
+    }
+  ]
+}
+</script>
+
+<article class="project-full" itemscope itemtype="https://schema.org/Article">
   <div class="project-hero">
     <div class="project-hero-header">
       <h1>{{ page.title }}</h1>
