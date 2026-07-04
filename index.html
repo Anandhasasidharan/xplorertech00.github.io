@@ -4,28 +4,134 @@ title: Home
 permalink: /
 ---
 
-<!-- HERO (Editorial Engine) -->
+<!-- HERO -->
 {% if site.pretext.enabled %}
-<div class="pretext-hero editorial-hero">
-  <canvas id="pretext-hero-canvas" class="pretext-hero-canvas"></canvas>
-  <div class="hint">Drag the orbs · Click to pause · Zero DOM reads</div>
-  <div class="hero-cta editorial-cta">
-    <a href="{{ '/projects/' | relative_url }}" class="btn btn-primary">View Projects</a>
-    <a href="https://linkedin.com/{{ site.social.linkedin }}" class="btn btn-outline" target="_blank" rel="noopener">LinkedIn</a>
-    <a href="{{ '/assets/resume/Anandhasasidharan_Resume_Portfolio.pdf' | relative_url }}" class="btn btn-outline" target="_blank" rel="noopener">Resume →</a>
-    <a href="{{ site.blog_url }}" class="btn btn-outline" target="_blank" rel="noopener">Blog →</a>
+<section class="home-hero">
+  <div class="home-hero-copy">
+    <p class="home-eyebrow">Research portfolio / security systems / explanatory AI</p>
+    <h1>I build security tools people can trust at a glance.</h1>
+    <p class="home-deck">
+      Cybersecurity, AI safety, and robotics projects presented with a clear story,
+      visible proof, and one memorable visual signature.
+    </p>
+
+    <div class="home-cta-group">
+      <a href="{{ '/projects/' | relative_url }}" class="btn btn-primary">View Projects</a>
+      <a href="{{ site.blog_url }}" class="btn btn-outline" target="_blank" rel="noopener">Read Blog</a>
+      <a href="{{ '/assets/resume/Anandhasasidharan_Resume_Portfolio.pdf' | relative_url }}" class="btn btn-outline" target="_blank" rel="noopener">Resume →</a>
+    </div>
+
+    <div class="home-proof">
+      <div class="proof-item">
+        <span class="proof-kicker">Interpretable</span>
+        <p>Security AI and model outputs that can be explained, traced, and audited.</p>
+      </div>
+      <div class="proof-item">
+        <span class="proof-kicker">Operational</span>
+        <p>Tools designed to plug into real workflows, not just read well in a demo.</p>
+      </div>
+      <div class="proof-item">
+        <span class="proof-kicker">Open</span>
+        <p>Built in public with concrete repos, blog posts, and reusable components.</p>
+      </div>
+    </div>
   </div>
-  <script src="{{ '/assets/js/pretext-hero.js' | relative_url }}"></script>
-</div>
+
+  <div class="pretext-hero editorial-hero">
+    <canvas id="pretext-hero-canvas" class="pretext-hero-canvas"></canvas>
+    <div class="hint">Drag the orbs · Click to pause · Zero DOM reads</div>
+    <script src="{{ '/assets/js/pretext-hero.js' | relative_url }}"></script>
+  </div>
+</section>
 {% endif %}
 
-<!-- FEATURES -->
+<!-- SIGNAL -->
+<section class="signal-section">
+  <div class="section-header">
+    <h2>What sticks</h2>
+    <p>Clear intent, real proof, and a specific point of view</p>
+  </div>
+
+  <div class="signal-grid">
+    <div class="feature-card">
+      <div class="feature-badge">01</div>
+      <h3>Interpretable systems</h3>
+      <p>
+        I focus on security tools that explain their own decisions instead of hiding
+        behind a black box.
+      </p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-badge">02</div>
+      <h3>Actionable workflows</h3>
+      <p>
+        Every project is built to fit into a real process: scanning, verification,
+        alerting, or review.
+      </p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-badge">03</div>
+      <h3>Visible output</h3>
+      <p>
+        The work is public, documented, and grounded in specific outcomes rather than
+        vague buzzwords.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED WORK -->
+<section class="featured-work">
+  <div class="section-header">
+    <h2>Featured work</h2>
+    <p>Selected projects with the clearest story</p>
+  </div>
+
+  <div class="featured-grid">
+    <a class="spotlight-card spotlight-card--large" href="{{ '/projects/verialign/' | relative_url }}">
+      <span class="spotlight-label">Proxy / verification</span>
+      <h3>VeriAlign</h3>
+      <p class="spotlight-lede">Turns LLM API traffic into verified responses with claim grounding, contradiction checks, and confidence metadata.</p>
+      <div class="spotlight-meta">
+        <span>LLM APIs</span>
+        <span>Source grounding</span>
+        <span>Response verification</span>
+      </div>
+    </a>
+
+    <a class="spotlight-card" href="{{ '/projects/community-ai-audit/' | relative_url }}">
+      <span class="spotlight-label">Audit / plugins</span>
+      <h3>Community AI Audit</h3>
+      <p class="spotlight-lede">A plugin-driven framework for scanning AI behavior across providers and sending findings to SIEM tools.</p>
+      <div class="spotlight-meta">
+        <span>Multi-provider</span>
+        <span>Plugin architecture</span>
+        <span>SIEM output</span>
+      </div>
+    </a>
+
+    <a class="spotlight-card" href="{{ '/projects/oryth/' | relative_url }}">
+      <span class="spotlight-label">Dashboard / defense</span>
+      <h3>ORYTH</h3>
+      <p class="spotlight-lede">An email security dashboard for infrastructure discovery, SPF/DKIM/DMARC checks, and spoofing risk analysis.</p>
+      <div class="spotlight-meta">
+        <span>CENSYS</span>
+        <span>Threat intel</span>
+        <span>Email posture</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- FOCUS -->
 <div class="section-header" style="margin-top: 80px;">
-  <h2>Robotics × AI × Hacking</h2>
-  <p>Three domains. One mission.</p>
+  <h2>My focus</h2>
+  <p>What I try to make obvious in every build</p>
 </div>
 
-<section class="features-grid">
+<section class="signal-grid">
   <div class="feature-card">
     <div class="feature-badge">🤖</div>
     <h3>Robotics</h3>
@@ -57,9 +163,8 @@ permalink: /
   </div>
 </section>
 
-<!-- PROJECTS -->
 <div class="section-header" style="margin-top: 80px;">
-  <h2>Projects</h2>
+  <h2>All projects</h2>
   <p>Open source tools and research</p>
 </div>
 
