@@ -8,7 +8,7 @@ Personal portfolio and research hub for **Anandhasasidharan S** — cybersecurit
 
 Built with **Jekyll + GitHub Pages**. Features an interactive editorial engine powered by @chenglou/pretext for kinetic typography demos.
 
-- **Live site**: https://anandhasasidharan.github.io/xplorertech00.github.io/
+- **Live site**: https://xplorertech00.github.io/
 - **Blog**: https://xplorertech00.wordpress.com
 
 ## Projects
