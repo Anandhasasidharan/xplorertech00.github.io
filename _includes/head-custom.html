@@ -6,6 +6,11 @@
 <meta name="msvalidate.01" content="{{ site.search_console.bing }}">
 {% endif %}
 
+{% if page.url == '/' and site.liquidgl.enabled %}
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/gh/naughtyduk/liquidGL@main/scripts/liquidGL.js" defer></script>
+{% endif %}
+
 <!-- JSON-LD Structured Data: WebSite + Person -->
 <script type="application/ld+json">
 {

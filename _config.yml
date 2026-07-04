@@ -70,6 +70,12 @@ pretext:
   hero_subtitle: "Robotics × AI × Hacking"
   demo_pages: false
 
+liquidgl:
+  enabled: true
+  target: ".hero-glass"
+  snapshot: "body"
+  min_width: 900
+
 # ── Build ─────────────────────────────────────────────────
 markdown: kramdown
 highlighter: rouge

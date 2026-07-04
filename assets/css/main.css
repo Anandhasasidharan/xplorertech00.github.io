@@ -253,6 +253,18 @@ a:hover {
 .nav-toggle.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
 @media (max-width: 768px) {
+  .hero-stage {
+    min-height: 420px;
+    margin-bottom: 56px;
+  }
+  .hero-glass {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    border-radius: 20px;
+  }
   .nav-toggle { display: flex; }
   .nav-links {
     display: none;
@@ -286,6 +298,65 @@ a:hover {
 }
 
 /* ── Editorial Hero ─────────────────────────────────── */
+.hero-stage {
+  position: relative;
+  min-height: clamp(620px, 84vh, 760px);
+  margin-bottom: 72px;
+}
+
+.hero-glass {
+  position: fixed;
+  top: 88px;
+  left: 24px;
+  right: 24px;
+  height: clamp(560px, 72vh, 690px);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(87, 241, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 82% 12%, rgba(255, 92, 240, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-deep), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: var(--surface-blur);
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  opacity: 1;
+  transition: opacity 280ms ease, transform 280ms ease;
+}
+
+.hero-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.22), transparent 18%, rgba(87, 241, 255, 0.08) 52%, transparent 78%, rgba(216, 181, 108, 0.08)),
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 42%);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+}
+
+.hero-stage > .pretext-hero {
+  position: relative;
+  z-index: 2;
+  padding-top: 28px;
+}
+
+.hero-stage--fallback .hero-glass {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  opacity: 0.95;
+  transform: none;
+}
+
+.hero-stage--hidden .hero-glass {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+
 .editorial-hero {
   padding: 28px 0 8px;
 }
@@ -295,6 +366,13 @@ a:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  position: relative;
+  z-index: 2;
+}
+
+.pretext-hero canvas {
+  border-radius: 24px;
+  box-shadow: var(--shadow-deep);
 }
 
 /* ── Editorial Typography ──────────────────────────── */
