@@ -6,21 +6,17 @@ permalink: /
 
 <!-- HERO (Editorial Engine) -->
 {% if site.pretext.enabled %}
-<section class="hero-stage">
-  <div class="hero-glass liquidGL" aria-hidden="true"></div>
-  <div class="pretext-hero editorial-hero">
-    <canvas id="pretext-hero-canvas" class="pretext-hero-canvas"></canvas>
-    <div class="hint">Drag the orbs · Click to pause · Zero DOM reads</div>
-    <div class="hero-cta editorial-cta">
-      <a href="{{ '/projects/' | relative_url }}" class="btn btn-primary">View Projects</a>
-      <a href="https://linkedin.com/{{ site.social.linkedin }}" class="btn btn-outline" target="_blank" rel="noopener">LinkedIn</a>
-      <a href="{{ '/assets/resume/Anandhasasidharan_Resume_Portfolio.pdf' | relative_url }}" class="btn btn-outline" target="_blank" rel="noopener">Resume →</a>
-      <a href="{{ site.blog_url }}" class="btn btn-outline" target="_blank" rel="noopener">Blog →</a>
-    </div>
+<div class="pretext-hero editorial-hero">
+  <canvas id="pretext-hero-canvas" class="pretext-hero-canvas"></canvas>
+  <div class="hint">Drag the orbs · Click to pause · Zero DOM reads</div>
+  <div class="hero-cta editorial-cta">
+    <a href="{{ '/projects/' | relative_url }}" class="btn btn-primary">View Projects</a>
+    <a href="https://linkedin.com/{{ site.social.linkedin }}" class="btn btn-outline" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="{{ '/assets/resume/Anandhasasidharan_Resume_Portfolio.pdf' | relative_url }}" class="btn btn-outline" target="_blank" rel="noopener">Resume →</a>
+    <a href="{{ site.blog_url }}" class="btn btn-outline" target="_blank" rel="noopener">Blog →</a>
   </div>
   <script src="{{ '/assets/js/pretext-hero.js' | relative_url }}"></script>
-  <script src="{{ '/assets/js/liquidgl-init.js' | relative_url }}" defer></script>
-</section>
+</div>
 {% endif %}
 
 <!-- FEATURES -->
