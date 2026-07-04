@@ -469,79 +469,6 @@ a:hover {
   line-height: 1.7;
 }
 
-/* ── Demo Cards ────────────────────────────────────────── */
-.demos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-  gap: 24px;
-  margin: 40px 0;
-}
-
-.demo-card {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 28%),
-    var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: var(--surface-blur);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all var(--transition-normal);
-  box-shadow: var(--shadow-card);
-}
-
-.demo-card:hover {
-  border-color: rgba(216, 181, 108, 0.28);
-  box-shadow: var(--shadow-deep), 0 0 0 1px rgba(216, 181, 108, 0.08);
-  transform: translateY(-3px);
-}
-
-.demo-card canvas {
-  width: 100%;
-  height: 260px;
-  display: block;
-  cursor: default;
-}
-
-.demo-card .demo-info {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.03));
-}
-
-.demo-card .demo-info h3 {
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.demo-card .demo-info p {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-.demo-card .demo-info .demo-tag {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--magenta);
-  background: rgba(255, 92, 240, 0.09);
-  border: 1px solid rgba(255, 92, 240, 0.18);
-  padding: 2px 8px;
-  border-radius: 3px;
-  margin-top: 6px;
-}
-
-@media (max-width: 768px) {
-  .demos-grid {
-    grid-template-columns: 1fr;
-  }
-  .demo-card canvas {
-    height: 200px;
-  }
-}
-
 /* ── Blog CTA Section ──────────────────────────────────── */
 .blog-cta {
   position: relative;
@@ -807,7 +734,6 @@ a:hover {
 
 .project-card::after,
 .feature-card::after,
-.demo-card::after,
 .post-card::after,
 .terminal-box::after,
 .blog-cta::after,
@@ -834,7 +760,6 @@ a:hover {
 
 .project-card > *,
 .feature-card > *,
-.demo-card > *,
 .post-card > *,
 .terminal-box > *,
 .blog-cta > *,
@@ -1212,7 +1137,6 @@ a:hover {
 .feature-card,
 .project-card,
 .post-card,
-.demo-card,
 .page-header,
 .blog-cta,
 .project-hero,

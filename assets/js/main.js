@@ -26,7 +26,7 @@
     });
   }, { threshold: 0.1 });
 
-  document.querySelectorAll('.feature-card, .post-card, .project-card, .demo-card, .blog-cta, .page-header, .terminal-box, .project-hero').forEach((el, index) => {
+  document.querySelectorAll('.feature-card, .post-card, .project-card, .blog-cta, .page-header, .terminal-box, .project-hero').forEach((el, index) => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
     el.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
