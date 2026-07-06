@@ -100,6 +100,16 @@ exclude:
   - package.json
   - package-lock.json
   - _posts-archive/
+  - prompt-injection-viz/node_modules/
+  - prompt-injection-viz/src/
+  - prompt-injection-viz/public/
+  - prompt-injection-viz/package.json
+  - prompt-injection-viz/package-lock.json
+  - prompt-injection-viz/vite.config.ts
+  - prompt-injection-viz/tsconfig*.json
+  - prompt-injection-viz/README.md
+  - prompt-injection-viz/.gitignore
+  - prompt-injection-viz/.oxlintrc.json
 
 include:
   - _pages
