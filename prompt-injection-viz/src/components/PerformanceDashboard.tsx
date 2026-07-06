@@ -1,5 +1,12 @@
 import { useStore } from '../store';
-import { Cpu, Zap, Clock, Database, Hash, BarChart3, Wifi, HardDrive } from 'lucide-react';
+import { Cpu, Zap, Clock, Database, Hash, BarChart3, Wifi, HardDrive, ShieldAlert, Brain } from 'lucide-react';
+
+const MODELS = [
+  { label: 'Primary Classifier', value: 'Xenova/prompt-injection', icon: Brain },
+  { label: 'Fallback Classifier', value: 'Xenova/toxic-bert', icon: ShieldAlert },
+  { label: 'Embeddings', value: 'Xenova/all-MiniLM-L6-v2', icon: Database },
+  { label: 'Tokenizer', value: 'bert-base-uncased', icon: Hash },
+];
 
 export function PerformanceDashboard() {
   const result = useStore((s) => s.result);
@@ -7,15 +14,15 @@ export function PerformanceDashboard() {
 
   const metrics = [
     { label: 'Device', value: modelState.device.toUpperCase(), icon: Cpu },
-    { label: 'Classifier', value: result?.modelInfo.classifier || 'N/A', icon: Database },
-    { label: 'Tokenizer', value: result?.modelInfo.tokenizer || 'N/A', icon: Hash },
+    { label: 'Classifier', value: result?.modelInfo.classifier || modelState.loadingMessage, icon: Database },
+    { label: 'Tokenizer', value: result?.modelInfo.tokenizer || 'bert-base-uncased', icon: Hash },
     { label: 'Total Latency', value: result ? `${result.metrics.totalMs}ms` : '—', icon: Clock },
     { label: 'Classification', value: result ? `${result.metrics.classificationMs}ms` : '—', icon: Zap },
     { label: 'Tokenization', value: result ? `${result.metrics.tokenizationMs}ms` : '—', icon: Clock },
     { label: 'Tokens/sec', value: result ? `${result.metrics.tokensPerSecond}` : '—', icon: BarChart3 },
     { label: 'Token Count', value: result ? `${result.tokens.length}` : '—', icon: Hash },
     { label: 'GPU Available', value: (typeof navigator !== 'undefined' && 'gpu' in navigator) ? 'Yes' : 'No', icon: Cpu },
-    { label: 'Model Status', value: modelState.classifierLoaded ? 'Loaded' : 'Loading...', icon: Wifi },
+    { label: 'Model Status', value: modelState.loadingMessage || (modelState.classifierLoaded ? 'Loaded' : 'Loading...'), icon: Wifi },
     { label: 'Cache', value: 'Browser Cache', icon: HardDrive },
   ];
 
@@ -60,6 +67,28 @@ export function PerformanceDashboard() {
             {modelState.error}
           </div>
         )}
+
+        <div className="mt-4 border-t border-[#1a1920] pt-4">
+          <h4 className="text-[#e8e4dc] font-serif text-xs mb-3">Models on Hugging Face Hub</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {MODELS.map((m, i) => {
+              const Icon = m.icon;
+              return (
+                <a key={i}
+                  href={`https://huggingface.co/${m.value}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-2 bg-[#0f0f14] rounded border border-[#1a1920] hover:border-[#c4a35a]/30 transition-colors"
+                >
+                  <Icon size={14} className="text-[#6b685e] shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[10px] text-[#6b685e] uppercase tracking-wider">{m.label}</div>
+                    <div className="text-xs text-[#c4a35a] truncate">{m.value}</div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );

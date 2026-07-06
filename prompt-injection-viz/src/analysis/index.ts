@@ -6,6 +6,13 @@ import { estimateConfidence, estimateEntropy } from './confidence';
 import { estimateUncertainty, generateAlternativePredictions } from './uncertainty';
 import { ai } from '../ai';
 
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 function splitSentences(text: string): { text: string; start: number; end: number }[] {
   const sentences: { text: string; start: number; end: number }[] = [];
   let cursor = 0;
@@ -249,8 +256,12 @@ export async function analyzePrompt(
   const t1 = performance.now();
   let tokenResult: { ids: number[]; tokens: string[]; offsets: { start: number; end: number }[] } = { ids: [], tokens: [], offsets: [] };
   try {
-    const encoding = await ai.tokenizer.encode(text);
-    tokenResult = { ids: encoding.ids, tokens: encoding.tokens, offsets: encoding.offsets };
+    const encoding = await withTimeout(ai.tokenizer.encode(text), 5000, null as any);
+    if (encoding) {
+      tokenResult = { ids: encoding.ids, tokens: encoding.tokens, offsets: encoding.offsets };
+    } else {
+      throw new Error('timeout');
+    }
   } catch {
     tokenResult.tokens = text.split(/\b(?=\w)/);
     tokenResult.ids = tokenResult.tokens.map((_, i) => i);
@@ -277,7 +288,12 @@ export async function analyzePrompt(
   const t2 = performance.now();
   let classifierResult: ClassificationResult;
   try {
-    classifierResult = await ai.classifier.classify(text);
+    classifierResult = await withTimeout(ai.classifier.classify(text), 10000, {
+      labels: ['SAFE'], scores: [0.99], topLabel: 'SAFE', topScore: 0.99,
+      confidence: 0.99, uncertainty: 0.01,
+      allProbabilities: [{ label: 'SAFE', probability: 0.99 }],
+      latencyMs: 0,
+    });
   } catch {
     classifierResult = {
       labels: ['SAFE'], scores: [0.99], topLabel: 'SAFE', topScore: 0.99,

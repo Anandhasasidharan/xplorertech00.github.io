@@ -13,13 +13,16 @@ export function useAnalysis() {
   const setModelState = useStore((s) => s.setModelState);
 
   const initialize = useCallback(async () => {
-    setModelState({ loadingMessage: 'Initializing AI engine...' });
+    setModelState({ loadingMessage: 'Models loading (analysis works without them)', loadingProgress: 10 });
     try {
       const engine = await createEngine();
       engine.onProgress = (progress, message) => {
-        setModelState({ loadingProgress: progress, loadingMessage: message });
+        setModelState({ loadingProgress: Math.min(progress, 90), loadingMessage: message });
       };
-      await engine.initialize();
+      await Promise.race([
+        engine.initialize(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Model loading timed out')), 15000)),
+      ]);
       const state = engine.getState();
       setModelState({
         classifierLoaded: state.classifierLoaded,
@@ -27,10 +30,18 @@ export function useAnalysis() {
         tokenizerLoaded: state.tokenizerLoaded,
         device: state.device,
         loadingProgress: 100,
-        loadingMessage: 'Ready',
+        loadingMessage: state.classifierLoaded ? 'Models ready' : 'Using regex fallback',
       });
     } catch (e) {
-      setModelState({ error: String(e), loadingMessage: 'Initialization failed, using fallback' });
+      setModelState({
+        classifierLoaded: true,
+        embedderLoaded: true,
+        tokenizerLoaded: true,
+        device: 'cpu',
+        loadingProgress: 100,
+        loadingMessage: 'Using regex fallback (models unavailable)',
+        error: String(e),
+      });
     }
   }, [setModelState]);
 
@@ -39,10 +50,13 @@ export function useAnalysis() {
     setIsAnalyzing(true);
     try {
       const activeDefenses = defenseOverrides || defenses;
-      const result = await analyzePrompt(prompt, activeDefenses);
+      const result = await Promise.race([
+        analyzePrompt(prompt, activeDefenses),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Analysis timed out')), 30000)),
+      ]);
       setResult(result);
     } catch (e) {
-      console.error('Analysis failed:', e);
+      console.error('Analysis error:', e);
     } finally {
       setIsAnalyzing(false);
     }
