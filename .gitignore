@@ -8,3 +8,5 @@ node_modules/
 *.gem
 *.log
 Gemfile.lock
+prompt-injection-viz-build/
+prompt-injection-viz/node_modules/
