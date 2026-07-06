@@ -1,0 +1,1 @@
+export { RiskHeatmap } from './RiskHeatmap';
