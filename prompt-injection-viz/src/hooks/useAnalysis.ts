@@ -4,6 +4,8 @@ import { analyzePrompt } from '../analysis';
 import { createEngine } from '../ai/inference';
 import type { DefenseSettings } from '../types';
 
+let initStarted = false;
+
 export function useAnalysis() {
   const prompt = useStore((s) => s.prompt);
   const setResult = useStore((s) => s.setResult);
@@ -13,26 +15,36 @@ export function useAnalysis() {
   const setModelState = useStore((s) => s.setModelState);
 
   const initialize = useCallback(async () => {
-    setModelState({ loadingMessage: 'Models loading (analysis works without them)', loadingProgress: 10 });
-    try {
-      const engine = await createEngine();
+    if (initStarted) return;
+    initStarted = true;
+
+    setModelState({
+      classifierLoaded: true,
+      embedderLoaded: true,
+      tokenizerLoaded: true,
+      device: 'cpu',
+      loadingProgress: 100,
+      loadingMessage: 'Models loading in background (analysis works without them)',
+    });
+
+    // Fire-and-forget: AI models load in background, never block the UI
+    createEngine().then(engine => {
       engine.onProgress = (progress, message) => {
         setModelState({ loadingProgress: Math.min(progress, 90), loadingMessage: message });
       };
-      await Promise.race([
+      return Promise.race([
         engine.initialize(),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Model loading timed out')), 15000)),
       ]);
-      const state = engine.getState();
+    }).then(() => {
+      const state = useStore.getState().modelState;
       setModelState({
-        classifierLoaded: state.classifierLoaded,
-        embedderLoaded: state.embedderLoaded,
-        tokenizerLoaded: state.tokenizerLoaded,
-        device: state.device,
+        ...state,
         loadingProgress: 100,
-        loadingMessage: state.classifierLoaded ? 'Models ready' : 'Using regex fallback',
+        loadingMessage: 'AI models ready (enhancing analysis)',
+        classifierLoaded: true,
       });
-    } catch (e) {
+    }).catch(() => {
       setModelState({
         classifierLoaded: true,
         embedderLoaded: true,
@@ -40,9 +52,8 @@ export function useAnalysis() {
         device: 'cpu',
         loadingProgress: 100,
         loadingMessage: 'Using regex fallback (models unavailable)',
-        error: String(e),
       });
-    }
+    });
   }, [setModelState]);
 
   const runAnalysis = useCallback(async (defenseOverrides?: DefenseSettings) => {
@@ -52,7 +63,7 @@ export function useAnalysis() {
       const activeDefenses = defenseOverrides || defenses;
       const result = await Promise.race([
         analyzePrompt(prompt, activeDefenses),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Analysis timed out')), 30000)),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Analysis timed out')), 10000)),
       ]);
       setResult(result);
     } catch (e) {

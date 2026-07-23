@@ -1,1 +1,1 @@
-export { classifierInterface, classify, isLoaded, getModelName, getDevice, setOnProgress } from './promptInjectionClassifier';
+export { classifierInterface, classify, isLoaded, getModelName, getDevice } from './promptInjectionClassifier';
