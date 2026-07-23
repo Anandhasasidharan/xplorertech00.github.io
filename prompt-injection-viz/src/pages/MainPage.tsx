@@ -13,12 +13,15 @@ import { ModelComparison } from '../components/ModelComparison';
 import { PerformanceDashboard } from '../components/PerformanceDashboard';
 import { InterpretabilityDashboard } from '../components/InterpretabilityDashboard';
 import { ReportExport } from '../components/ReportExport';
+import { AttackBreakdown } from '../components/AttackBreakdown';
+import { HowItWorks } from '../components/HowItWorks';
 import { RiskHeatmap } from '../visualization/heatmaps';
 import { SentenceTimeline } from '../visualization/timelines';
-import { ForceGraph } from '../visualization/graphs';
+import { ForceGraph, InjectionFlowMap } from '../visualization/graphs';
 import {
   Play, RotateCcw, Zap, LayoutDashboard, BarChart3,
-  Shield, GitBranch, FlaskConical, FileText, AlertTriangle, Cpu
+  Shield, GitBranch, FlaskConical, FileText, AlertTriangle, Cpu,
+  Search, BookOpen
 } from 'lucide-react';
 
 const EXAMPLES = [
@@ -53,6 +56,7 @@ export function MainPage() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'breakdown', label: 'Breakdown', icon: Search },
     { id: 'tokens', label: 'Tokens', icon: FileText },
     { id: 'timeline', label: 'Timeline', icon: BarChart3 },
     { id: 'categories', label: 'Categories', icon: AlertTriangle },
@@ -60,6 +64,7 @@ export function MainPage() {
     { id: 'conflict', label: 'Hierarchy', icon: Shield },
     { id: 'defenses', label: 'Defenses', icon: FlaskConical },
     { id: 'interpret', label: 'Interpretability', icon: Cpu },
+    { id: 'learn', label: 'How It Works', icon: BookOpen },
   ];
 
   const [activeTab, setActiveTab] = React.useState('overview');
@@ -168,6 +173,26 @@ export function MainPage() {
                 </>
               )}
 
+              {activeTab === 'breakdown' && (
+                <div className="space-y-4">
+                  <AttackBreakdown />
+                  <div className="bg-[#121216] border border-[#1a1920] rounded-lg p-4">
+                    <h3 className="text-[#e8e4dc] font-serif text-sm mb-3">Injection Flow Map</h3>
+                    <p className="text-[#6b685e] text-xs mb-3">
+                      Shows how injection tokens (bottom row) target context tokens (top row).
+                      Edge color = severity, edge width = attack strength.
+                    </p>
+                    <InjectionFlowMap
+                      tokens={result.tokens}
+                      flags={result.sentences.flatMap(s => s.flags)}
+                      text={result.safeRewrite?.original || ''}
+                      width={700}
+                      height={400}
+                    />
+                  </div>
+                </div>
+              )}
+
               {activeTab === 'tokens' && (
                 <TokenDisplay />
               )}
@@ -201,6 +226,10 @@ export function MainPage() {
               {activeTab === 'conflict' && <ConflictSimulator />}
               {activeTab === 'defenses' && <DefenseSimulator />}
               {activeTab === 'interpret' && <InterpretabilityDashboard />}
+
+              {activeTab === 'learn' && (
+                <HowItWorks />
+              )}
             </div>
 
             {/* Model Comparison */}
