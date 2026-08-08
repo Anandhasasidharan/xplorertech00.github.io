@@ -1,6 +1,7 @@
 import type { InferenceEngineInterface } from '../interfaces';
 import { tokenizerInterface } from '../tokenizer';
-import { classifierInterface } from '../classifiers';
+import { classifierInterface, initClassifier, onClassifierProgress } from '../classifiers';
+import { detectDevice } from './workerClassifier';
 import { embedderInterface } from '../embeddings';
 
 export class InferenceEngine implements InferenceEngineInterface {
@@ -16,41 +17,28 @@ export class InferenceEngine implements InferenceEngineInterface {
   }
 
   async initialize(): Promise<void> {
-    this.reportProgress(0, 'Initializing...');
+    this.reportProgress(2, 'Initializing...');
 
-    try {
-      this._device = navigator.gpu ? 'webgpu' : 'wasm';
-    } catch { this._device = 'wasm'; }
-    this.reportProgress(5, `Device: ${this._device}`);
+    this._device = detectDevice();
+    this.reportProgress(4, `Device: ${this._device} (${this._device === 'webgpu' ? 'GPU acceleration' : 'WASM fallback'})`);
+
+    onClassifierProgress((progress, message) => {
+      this.reportProgress(5 + Math.min(progress, 100) * 0.85, message);
+    });
+
+    const classifierOk = await initClassifier();
+    this._classifierLoaded = classifierOk;
+    this.reportProgress(classifierOk ? 95 : 92, classifierOk ? 'AI model ready' : 'AI model unavailable, using regex fallback');
 
     try {
       await tokenizerInterface.encode('test');
       this._tokenizerLoaded = true;
-      this.reportProgress(20, 'Tokenizer loaded');
+      this.reportProgress(98, 'Tokenizer ready');
     } catch {
-      this.reportProgress(20, 'Tokenizer fallback');
       this._tokenizerLoaded = true;
     }
 
-    try {
-      await classifierInterface.classify('test');
-      this._classifierLoaded = true;
-      this.reportProgress(60, 'Classifier loaded');
-    } catch {
-      this.reportProgress(60, 'Classifier fallback');
-      this._classifierLoaded = true;
-    }
-
-    try {
-      await embedderInterface.embed('test');
-      this._embedderLoaded = true;
-      this.reportProgress(90, 'Embedder loaded');
-    } catch {
-      this.reportProgress(90, 'Embedder fallback');
-      this._embedderLoaded = true;
-    }
-
-    this.reportProgress(100, 'Ready');
+    this.reportProgress(100, classifierOk ? 'AI models ready (enhancing analysis)' : 'Using regex fallback (models unavailable)');
   }
 
   getTokenizer() { return tokenizerInterface; }

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useStore } from '../store';
 import { analyzePrompt } from '../analysis';
 import { createEngine } from '../ai/inference';
+import { detectDevice } from '../ai/inference/workerClassifier';
 import type { DefenseSettings } from '../types';
 
 let initStarted = false;
@@ -18,24 +19,22 @@ export function useAnalysis() {
     if (initStarted) return;
     initStarted = true;
 
+    const device = detectDevice();
     setModelState({
-      classifierLoaded: true,
-      embedderLoaded: true,
-      tokenizerLoaded: true,
-      device: 'cpu',
-      loadingProgress: 100,
-      loadingMessage: 'Models loading in background (analysis works without them)',
+      classifierLoaded: false,
+      tokenizerLoaded: false,
+      device,
+      loadingProgress: 0,
+      loadingMessage: `Downloading AI model (110 MB, cached after first visit)...`,
+      error: null,
     });
 
-    // Fire-and-forget: AI models load in background, never block the UI
+    // Fire-and-forget: the model loads in a Web Worker, never blocking the UI
     createEngine().then(engine => {
       engine.onProgress = (progress, message) => {
-        setModelState({ loadingProgress: Math.min(progress, 90), loadingMessage: message });
+        setModelState({ loadingProgress: Math.min(progress, 99), loadingMessage: message });
       };
-      return Promise.race([
-        engine.initialize(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Model loading timed out')), 15000)),
-      ]);
+      return engine.initialize();
     }).then(() => {
       const state = useStore.getState().modelState;
       setModelState({
@@ -43,13 +42,13 @@ export function useAnalysis() {
         loadingProgress: 100,
         loadingMessage: 'AI models ready (enhancing analysis)',
         classifierLoaded: true,
+        tokenizerLoaded: true,
       });
     }).catch(() => {
       setModelState({
         classifierLoaded: true,
-        embedderLoaded: true,
         tokenizerLoaded: true,
-        device: 'cpu',
+        device,
         loadingProgress: 100,
         loadingMessage: 'Using regex fallback (models unavailable)',
       });

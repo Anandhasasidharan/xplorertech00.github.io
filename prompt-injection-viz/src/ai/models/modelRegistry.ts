@@ -31,21 +31,12 @@ export function getAllModels(): ModelRecord[] {
 }
 
 registerModel({
-  id: 'Xenova/prompt-injection',
-  name: 'Prompt Injection Detector',
-  type: 'classifier',
-  size: '85 MB',
-  loaded: false,
-  import: () => pipeline('text-classification', 'Xenova/prompt-injection', { device: 'wasm' }),
-});
-
-registerModel({
   id: 'Xenova/toxic-bert',
-  name: 'Toxic BERT',
+  name: 'Toxic BERT (injection proxy)',
   type: 'classifier',
-  size: '85 MB',
+  size: '110 MB',
   loaded: false,
-  import: () => pipeline('text-classification', 'Xenova/toxic-bert', { device: 'wasm' }),
+  import: () => pipeline('text-classification', 'Xenova/toxic-bert', { device: 'wasm', dtype: 'int8' }),
 });
 
 registerModel({

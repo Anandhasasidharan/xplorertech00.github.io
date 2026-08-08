@@ -189,6 +189,9 @@ let aiEnhanceInProgress = false;
 
 export async function enhanceWithAI(text: string): Promise<void> {
   if (aiEnhanceInProgress) return;
+  // Only enhance when the real model has finished loading in the worker.
+  // Until then the regex result is authoritative — no fake confidence overrides.
+  if (!ai.classifier.isLoaded()) return;
   aiEnhanceInProgress = true;
   try {
     const [classifierResult, encoding] = await Promise.all([
