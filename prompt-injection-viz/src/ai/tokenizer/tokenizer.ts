@@ -1,7 +1,7 @@
 import { Tokenizer } from '@huggingface/tokenizers';
 import type { TokenizerInterface, EncodingResult } from '../interfaces';
 
-const MODEL_ID = 'bert-base-uncased';
+const MODEL_ID = 'ASD492/pi-detector';
 
 let instance: Tokenizer | null = null;
 let vocabSize = 0;
@@ -28,7 +28,7 @@ function estimateOffsets(
   const subwordTokens: boolean[] = [];
   let searchPos = 0;
 
-  const specialTokens = new Set(['[CLS]', '[SEP]', '[PAD]', '[UNK]', '[MASK]']);
+  const specialTokens = new Set(['<s>', '</s>', '<pad>', '<unk>', '<mask>', '[CLS]', '[SEP]', '[PAD]', '[UNK]', '[MASK]']);
 
   for (const token of tokens) {
     if (specialTokens.has(token)) {
@@ -40,10 +40,10 @@ function estimateOffsets(
     }
 
     specialTokensMask.push(false);
-    const isSubword = token.startsWith('##');
+    const isSubword = token.startsWith('##') || token.startsWith('▁');
     subwordTokens.push(isSubword);
 
-    const cleanToken = isSubword ? token.slice(2) : token;
+    const cleanToken = isSubword ? token.replace(/^##|^▁/, '') : token;
     const searchText = text.toLowerCase();
     const idx = searchText.indexOf(cleanToken.toLowerCase(), searchPos);
 

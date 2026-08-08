@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import { pipeline, env } from '@huggingface/transformers';
-import { CLASSIFIER_MODEL, CLASSIFIER_DTYPE } from '../models/promptInjection';
+import { CLASSIFIER_MODEL, CLASSIFIER_DTYPE, CLASSIFIER_FALLBACK_DTYPE } from '../models/promptInjection';
 
 env.allowLocalModels = false;
 env.useBrowserCache = true;
@@ -45,7 +45,7 @@ self.onmessage = async (e: MessageEvent) => {
         try {
           pipe = await pipeline('text-classification', CLASSIFIER_MODEL, {
             device: d as any,
-            dtype: CLASSIFIER_DTYPE as any,
+            dtype: (d === 'webgpu' ? CLASSIFIER_DTYPE : CLASSIFIER_FALLBACK_DTYPE) as any,
             progress_callback: (p: any) => {
               postMessage({ type: 'progress', progress: progressPercent(p), message: progressMessage(p) });
             },
