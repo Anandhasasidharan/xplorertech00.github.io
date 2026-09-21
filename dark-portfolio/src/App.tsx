@@ -3,6 +3,8 @@ import LoadingScreen from "./components/LoadingScreen";
 import Hero from "./components/Hero";
 import SelectedWorks from "./components/SelectedWorks";
 import Journal from "./components/Journal";
+import SecurityLab from "./components/SecurityLab";
+import CalendarSection from "./components/CalendarSection";
 import Explorations from "./components/Explorations";
 import Stats from "./components/Stats";
 import Contact from "./components/Contact";
@@ -17,8 +19,10 @@ function App() {
         <Hero />
         <SelectedWorks />
         <Journal />
+        <SecurityLab />
         <Explorations />
         <Stats />
+        <CalendarSection />
         <Contact />
       </main>
     </>

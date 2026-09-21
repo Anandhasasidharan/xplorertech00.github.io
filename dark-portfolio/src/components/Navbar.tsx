@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const navLinks = ["Home", "Work", "Resume"];
+const navLinks = ["Home", "Work", "Lab", "Calendar", "Resume"];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -43,7 +43,16 @@ export default function Navbar() {
 
         {/* Nav links */}
         {navLinks.map((label) => {
-          const id = label === "Home" ? "home" : label === "Work" ? "work" : "resume";
+          const id =
+            label === "Home"
+              ? "home"
+              : label === "Work"
+              ? "work"
+              : label === "Lab"
+              ? "lab"
+              : label === "Calendar"
+              ? "calendar"
+              : "resume";
           const isActive = active === label;
           return (
             <a
