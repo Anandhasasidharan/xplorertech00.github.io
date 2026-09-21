@@ -1418,3 +1418,26 @@ a:hover {
   background: rgba(196, 163, 90, 0.25);
   color: var(--gold);
 }
+
+/* ── Calendar embed ────────────────────────────────────── */
+.cal-embed {
+  position: relative;
+  width: 100%;
+  padding-bottom: 75%; /* 4:3 fallback */
+  height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+.cal-embed iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+@media (min-width: 768px) {
+  .cal-embed { padding-bottom: 62.5%; } /* 8:5 on desktop */
+}
