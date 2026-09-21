@@ -111,4 +111,37 @@ permalink: /about/
       Resume →
     </a>
   </div>
+
+  <h2 style="color: var(--cyan); margin-top: 40px;">Schedule</h2>
+
+  <p>
+    Want to talk security research, interpretability, or a potential collaboration?
+    Check my availability below and grab a slot.
+  </p>
+
+  <!-- TODO: replace BOOKING_URL with your Google Calendar Appointment Schedule link.
+       Create it at calendar.google.com → + Create → Appointment schedule,
+       then paste the booking-page URL here. Until then the button is hidden. -->
+  <!--
+  <div style="display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0 24px;">
+    <a href="BOOKING_URL" class="btn btn-primary" target="_blank" rel="noopener">
+      Book a meeting →
+    </a>
+  </div>
+  -->
+
+  <div class="terminal-box">
+    <div class="output">
+      <span class="accent-cyan">cal</span> --show-availability<br><br>
+      <div class="cal-embed">
+        <iframe
+          src="https://calendar.google.com/calendar/embed?src=dc214f28e2694f26dbb445d73baaff685c410ceaacc687241f60df404f7fb0df%40group.calendar.google.com&ctz=Asia%2FKolkata"
+          title="Availability calendar"
+          loading="lazy"
+          scrolling="no"></iframe>
+      </div>
+      <br>
+      <span class="accent-green">$ _</span> times shown in Asia/Kolkata · prefer email? <a href="mailto:{{ site.social.email }}">write to me</a>
+    </div>
+  </div>
 </div>
