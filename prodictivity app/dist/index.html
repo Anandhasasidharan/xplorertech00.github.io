@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPRAWL_OS — calendar deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Michroma&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="./assets/index-fWZXT7c4.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DPZ0t37l.css">
+</head>
+<body>
+<canvas id="rain" aria-hidden="true"></canvas>
+<div class="scanlines" aria-hidden="true"></div>
+<div id="boot" class="boot"><div class="boot-inner" id="bootLines"></div></div>
+
+<header id="topbar">
+  <div class="brand">
+    <span class="brand-deck">SPRAWL_OS</span><span class="brand-ver">v2.0</span>
+    <span class="cursor-blink">█</span>
+  </div>
+  <div class="nav">
+    <button class="hk-btn" id="prevBtn" title="previous (←)">[ &lt; ]</button>
+    <button class="hk-btn" id="todayBtn" title="today (T)">[ TODAY ]</button>
+    <button class="hk-btn" id="nextBtn" title="next (→)">[ &gt; ]</button>
+    <span id="rangeLabel" class="range-label"></span>
+  </div>
+  <div class="views">
+    <button class="hk-btn view" data-view="month" title="month (M)">MONTH</button>
+    <button class="hk-btn view" data-view="week" title="week (W)">WEEK</button>
+    <button class="hk-btn view" data-view="day" title="day (D)">DAY</button>
+    <button class="hk-btn view" data-view="agenda" title="agenda (A)">RUNS</button>
+    <button class="hk-btn primary" id="newBtn" title="new event (N)">[ + JACK IN ]</button>
+  </div>
+</header>
+
+<div id="layout">
+  <aside id="sidebar">
+    <div class="side-block">
+      <div class="side-head">// mini-grid</div>
+      <div id="miniCal"></div>
+    </div>
+    <div class="side-block">
+      <div class="side-head">// dead-drops <span id="todoCount"></span></div>
+      <form id="todoForm" class="todo-form" autocomplete="off">
+        <input type="text" id="todoInput" placeholder="drop a task + ENTER" maxlength="120">
+        <input type="datetime-local" id="todoWhen" title="optional reminder">
+        <button type="submit" class="hk-btn primary">[ STASH ]</button>
+      </form>
+      <div id="todoList" class="todo-list"></div>
+      <button class="hk-btn small" id="clearDoneBtn">[ BURN DONE ]</button>
+    </div>
+    <div class="side-block">
+      <div class="side-head">// back-alley</div>
+      <div class="btn-grid">
+        <button class="hk-btn small" id="remindBtn">[ ALARM:OFF ]</button>
+        <button class="hk-btn small" id="rainBtn">[ RAIN:ON ]</button>
+        <button class="hk-btn small" id="exportBtn">[ EXPORT ]</button>
+        <button class="hk-btn small" id="importBtn">[ IMPORT ]</button>
+        <button class="hk-btn small danger" id="wipeBtn">[ FLATLINE ]</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" hidden>
+    </div>
+  </aside>
+  <main id="view"></main>
+</div>
+
+<div id="statusbar"><span id="statusText">…</span><span class="t-blink">█</span></div>
+<div id="dlgRoot"></div>
+<div id="toasts"></div>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-terminal-theme="green">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>&gt; LIFE_OS — hacker calendar + tasks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="scanlines" aria-hidden="true"></div>
+
+<div id="boot" class="boot">
+  <div class="boot-inner" id="bootLines"></div>
+</div>
+
+<header class="titlebar">
+  <div class="titlebar-left">
+    <span class="logo">&gt; LIFE_OS <span class="v">v1.1</span></span>
+    <span class="cursor-blink">█</span>
+  </div>
+  <div class="titlebar-center">
+    <button class="t-btn" id="prevBtn" title="prev month">[ &lt; ]</button>
+    <span id="monthLabel" class="month-label">SEPT 2026</span>
+    <button class="t-btn" id="nextBtn" title="next month">[ &gt; ]</button>
+  </div>
+  <div class="titlebar-right">
+    <button class="t-btn" id="todayBtn">[ TODAY ]</button>
+    <button class="t-btn" id="todoBtn">[ + TODO ]</button>
+    <button class="t-btn primary" id="newTaskBtn">[ + NEW TASK ]</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button class="t-btn small" data-t-theme="green">GREEN</button>
+    <button class="t-btn small" data-t-theme="amber">AMBER</button>
+    <button class="t-btn small" data-t-theme="cyan">CYAN</button>
+    <button class="t-btn small" data-t-theme="red">RED</button>
+    <button class="t-btn small" id="crtBtn">[ CRT:ON ]</button>
+    <button class="t-btn small" id="remindBtn">[ REMINDERS:OFF ]</button>
+  </div>
+  <div class="toolbar-right">
+    <button class="t-btn small" id="gcalBtn" title="import from Google Calendar (ICS)">[ GCAL SYNC ]</button>
+    <button class="t-btn small" id="exportBtn">[ EXPORT ]</button>
+    <button class="t-btn small" id="importBtn">[ IMPORT ]</button>
+    <input type="file" id="importFile" accept=".json" hidden>
+    <button class="t-btn small danger" id="wipeBtn">[ WIPE ]</button>
+  </div>
+</div>
+
+<main class="shell">
+  <section class="calendar-pane t-card">
+    <div class="card-head">&gt; calendar --month <span id="calMeta"></span></div>
+    <div class="dow-row">
+      <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div class="legend" id="legend">
+      <span><i class="dot green"></i>done</span>
+      <span><i class="dot outline"></i>pending</span>
+      <span><i class="dot tomato"></i>tomato</span>
+      <span><i class="dot flamingo"></i>flamingo</span>
+      <span><i class="dot tangerine"></i>tangerine</span>
+      <span><i class="dot banana"></i>banana</span>
+      <span><i class="dot sage"></i>sage</span>
+      <span><i class="dot basil"></i>basil</span>
+      <span><i class="dot peacock"></i>peacock</span>
+      <span><i class="dot blueberry"></i>blueberry</span>
+      <span><i class="dot lavender"></i>lavender</span>
+      <span><i class="dot grape"></i>grape</span>
+      <span><i class="dot graphite"></i>graphite</span>
+      <span>[x]=crossed / [ ]=open — click to toggle</span>
+    </div>
+  </section>
+
+  <aside class="detail-pane t-card">
+    <div class="card-head">&gt; cat <span id="detailDate">--select-a-day</span> <span class="t-blink">_</span></div>
+    <div id="detailList" class="detail-list"></div>
+    <div class="detail-foot">
+      <div class="status-line">&gt; status:</div>
+      <div id="statusBar" class="status-bar">-- no tasks --</div>
+    </div>
+    <div class="tasks-head">&gt; all_processes <span id="taskCount"></span></div>
+    <div id="taskList" class="task-list"></div>
+  </aside>
+</main>
+
+<section class="todo-wrap">
+  <div class="t-card todo-pane" id="todoPane">
+    <div class="card-head">&gt; todo_inbox --quick-capture <span id="todoCount"></span></div>
+    <form id="todoForm" class="todo-form">
+      <input type="text" id="todoInput" placeholder="> type todo + ENTER — e.g. buy_milk" maxlength="120" autocomplete="off">
+      <input type="datetime-local" id="todoWhen" title="optional reminder">
+      <button type="submit" class="t-btn primary">[ ADD ]</button>
+    </form>
+    <div id="todoList" class="todo-list"></div>
+    <div class="todo-foot">
+      <button class="t-btn small" id="clearDoneBtn">[ CLEAR DONE ]</button>
+      <span class="hint">todos = dateless quick list. calendar tasks = dated + reminders.</span>
+    </div>
+  </div>
+</section>
+
+<div id="toasts" class="toasts"></div>
+
+<footer class="statusbar">
+  <span id="footerStatus">localVault: OK | tasks: 0</span>
+  <span class="t-blink">█</span>
+</footer>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box t-card">
+    <div class="card-head">&gt; new_task --wizard <button class="t-btn small" id="closeModal">[ X ]</button></div>
+    <form id="taskForm">
+      <label>title
+        <input type="text" id="fTitle" placeholder="e.g. gym.exe" required maxlength="60">
+      </label>
+      <label>type
+        <select id="fType">
+          <option value="daily">daily — repeats forever (default)</option>
+          <option value="range">range — long task, start to end</option>
+          <option value="once">once — single date</option>
+        </select>
+      </label>
+      <div class="row">
+        <label>start / date
+          <input type="date" id="fStart">
+        </label>
+        <label>end (optional for daily = forever)
+          <input type="date" id="fEnd">
+        </label>
+      </div>
+      <div class="row">
+        <label>reminder time (optional)
+          <input type="time" id="fRemind">
+        </label>
+        <label>color tag — gcal palette
+        <select id="fColor">
+          <option value="basil">basil (default green)</option>
+          <option value="tomato">tomato</option>
+          <option value="flamingo">flamingo</option>
+          <option value="tangerine">tangerine</option>
+          <option value="banana">banana</option>
+          <option value="sage">sage</option>
+          <option value="peacock">peacock</option>
+          <option value="blueberry">blueberry</option>
+          <option value="lavender">lavender</option>
+          <option value="grape">grape</option>
+          <option value="graphite">graphite</option>
+          <option value="green">terminal green</option>
+          <option value="amber">amber</option>
+          <option value="cyan">cyan</option>
+          <option value="red">red</option>
+        </select>
+      </label>
+      </div>
+      <p class="hint">daily: leave end empty = repeats forever. range/once: set dates. reminder fires while tab is open. all checks are toggleable (uncross allowed).</p>
+      <div class="modal-actions">
+        <button type="submit" class="t-btn primary">[ SAVE ]</button>
+        <button type="button" class="t-btn" id="cancelModal">[ CANCEL ]</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
