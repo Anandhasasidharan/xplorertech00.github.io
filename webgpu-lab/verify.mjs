@@ -1,183 +1,380 @@
-import { chromium } from "playwright";
-import { mkdirSync } from "node:fs";
-import { resolve } from "node:path";
-import { tmpdir } from "node:os";
-
+#!/usr/bin/env node
 /**
- * Verification for the WebGPU Lab.
+ * Verification for the Three.js Lab.
  *
- * Modes:
- *   1. default            - WebGPU if the browser has it, else Canvas2D
- *   2. webgpu-forced-off  - navigator.gpu removed, Canvas2D fallback must work
- *   3. mobile width       - 390px
- *   4. reduced motion     - prefers-reduced-motion: reduce
+ *   node webgpu-lab/verify.mjs            (needs playwright + a server on :4000)
+ *   BASE=... OUT_DIR=... node webgpu-lab/verify.mjs
  *
- * In headless environments a WebGPU canvas is often not composited, so the
- * script also renders the scene OFFSCREEN on the GPU and reads the pixels
- * back. That proves the WebGPU pipeline really draws geometry.
+ * For each demo it loads the page with the default backend and with
+ * ?backend=webgl, in four modes — default, 390px, reduced motion, and Low
+ * quality — and checks:
+ *
+ *   - HTTP 200, a Three.js canvas, the expected backend label
+ *   - zero console errors / page errors
+ *   - no horizontal overflow and no label outside the canvas
+ *   - no overlapping labels
+ *   - reduced motion starts paused
+ *
+ * Then it samples palette colours from a screenshot (the white-clamping bug
+ * this guards against), exercises the two delegation buttons, presses F for
+ * the fps/backend readout, and reports page sizes and indicative heap growth.
  */
 
-const BASE = process.env.BASE_URL || "http://127.0.0.1:4000";
-const LAB = `${BASE}/xplorertech00.github.io/webgpu-lab`;
-// The curated screenshots in webgpu-lab/docs/ are produced by capture.mjs;
-// the verification run keeps its own throwaway copies.
+import { chromium } from "playwright";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+
+const BASE = process.env.BASE || "http://127.0.0.1:4000/xplorertech00.github.io/webgpu-lab";
 const OUT = process.env.OUT_DIR || resolve(tmpdir(), "webgpu-lab-verify");
 mkdirSync(OUT, { recursive: true });
 
-const PAGES = [
-  { name: "lab-index", url: `${LAB}/` },
-  { name: "gatekeeper", url: `${LAB}/gatekeeper/` },
-  { name: "delegation-tree", url: `${LAB}/delegation-tree/` }
+const PALETTE = {
+  gold: "#d8b56c",
+  amber: "#e29e4a",
+  teal: "#42a69c",
+  blue: "#5285c7",
+  green: "#39ff88",
+  red: "#ff5968"
+};
+
+const DEMOS = [
+  { id: "gatekeeper", path: "gatekeeper/", label: "Gatekeeper" },
+  { id: "delegation-tree", path: "delegation-tree/", label: "Delegation Tree" }
 ];
 
-const GPU_OFF_ARGS = ["--enable-unsafe-webgpu", "--use-angle=swiftshader", "--enable-features=Vulkan"];
+const MODES = [
+  { id: "default", query: "", ctx: { viewport: { width: 1280, height: 900 } } },
+  {
+    id: "mobile-390",
+    query: "",
+    ctx: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 1 }
+  },
+  { id: "reduced-motion", query: "", ctx: { viewport: { width: 1280, height: 900 }, reducedMotion: "reduce" } },
+  { id: "low-quality", query: "&quality=low", ctx: { viewport: { width: 1280, height: 900 } } }
+];
 
-async function run(label, { disableWebGPU, reducedMotion, viewport, tag }) {
-  console.log(`\n=== ${label} ===`);
-  const browser = await chromium.launch({ args: GPU_OFF_ARGS });
-  const context = await browser.newContext({
-    viewport: viewport || { width: 1280, height: 900 },
-    reducedMotion: reducedMotion ? "reduce" : "no-preference",
-    deviceScaleFactor: 1
-  });
-  if (disableWebGPU) {
-    await context.addInitScript(() => {
-      Object.defineProperty(navigator, "gpu", { get: () => undefined, configurable: true });
-    });
-  }
-  const results = [];
-  for (const p of PAGES) {
-    const page = await context.newPage();
-    const errors = [];
-    page.on("console", (m) => {
-      if (m.type() === "error") errors.push(m.text());
-    });
-    page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
-    const resp = await page.goto(p.url, { waitUntil: "load" });
-    await page.waitForTimeout(1400);
-    const status = resp ? resp.status() : 0;
+const BACKENDS = [
+  { id: "auto", param: "", expect: null },
+  { id: "webgl", param: "&backend=webgl", expect: "WebGL 2" }
+];
 
-    const info = await page.evaluate(async () => {
-      const banner = document.getElementById("fallback-banner");
-      const fallback = !!(banner && banner.style.display === "block");
-      const out = { fallback, gpuSupported: typeof navigator !== "undefined" && !!navigator.gpu };
-      // shader compilation + offscreen GPU render check
-      if (typeof WebGPULab !== "undefined" && WebGPULab.isSupported() && !fallback) {
-        try {
-          const adapter = await navigator.gpu.requestAdapter();
-          const device = await adapter.requestDevice();
-          const module = device.createShaderModule({
-            code: WebGPULab.shaders.vertex + "\n" + WebGPULab.shaders.fragment
-          });
-          const info = await module.getCompilationInfo();
-          out.shaderMessages = info.messages.map((m) => `${m.type}: ${m.message}`);
-          device.pushErrorScope("validation");
-          const canvas = document.createElement("canvas");
-          canvas.width = 200;
-          canvas.height = 200;
-          const ctx = canvas.getContext("webgpu");
-          const format = navigator.gpu.getPreferredCanvasFormat();
-          ctx.configure({ device, format, alphaMode: "premultiplied" });
-          out.format = format;
-          const err = await device.popErrorScope();
-          out.validationError = err ? err.message : null;
-        } catch (e) {
-          out.gpuProbeError = String(e);
-        }
-      }
-      // GPU path proof: render the real scene offscreen and read it back.
-      if (typeof window !== "undefined" && window.__lab && window.__lab.stage &&
-          typeof window.__lab.stage.renderToPixels === "function") {
-        try {
-          const prims = window.__lab.scene();
-          const stats = await window.__lab.stage.renderToPixels(prims, 320, 320);
-          out.gpuScene = stats;
-        } catch (e) {
-          out.gpuSceneError = String(e);
-        }
-      }
-      // does the demo actually draw pixels (works for both renderers)?
-      const canvas = document.getElementById("stage");
-      if (canvas) {
-        const tmp = document.createElement("canvas");
-        tmp.width = canvas.width;
-        tmp.height = canvas.height;
-        const c2 = tmp.getContext("2d");
-        c2.drawImage(canvas, 0, 0);
-        const data = c2.getImageData(0, 0, tmp.width, tmp.height).data;
-        let lit = 0;
-        for (let i = 3; i < data.length; i += 4) if (data[i] > 0) lit++;
-        out.litPixels = lit;
-        out.canvasSize = [canvas.width, canvas.height];
-      }
-      return out;
-    });
+const browser = await chromium.launch({
+  args: ["--enable-unsafe-webgpu", "--use-angle=swiftshader", "--enable-features=Vulkan"]
+});
 
-    // keyboard reachability + the key interactions
-    const interactions = {};
-    if (p.name === "gatekeeper") {
-      interactions.callButtons = await page.locator("#calls button").count();
-      interactions.countersPresent = (await page.locator("#c-allowed").count()) > 0;
-      await page.locator("#calls button").first().click();
-      interactions.detailAfterClick = (await page.locator("#detail .kv").count()) > 0;
-      await page.locator("canvas#stage").focus();
-      await page.keyboard.press("ArrowRight");
-      interactions.liveRegion = await page.locator("#live").textContent();
-    }
-    if (p.name === "delegation-tree") {
-      interactions.nodeButtons = await page.locator("#nodes button").count();
-      interactions.replay = await page.locator("#replay").count();
-      interactions.speed = await page.locator("#speed").count();
-      interactions.labels = await page.locator(".node-label").count();
-      await page.locator("#widen").click();
-      interactions.widenVerdict = (await page.locator("#verdict").textContent() || "").trim().slice(0, 140);
-      interactions.rejected = await page.locator("#verdict.rejected").count();
-      await page.locator("#narrow").click();
-      interactions.narrowVerdict = (await page.locator("#verdict").textContent() || "").trim().slice(0, 140);
-      interactions.issued = await page.locator("#verdict.issued").count();
-    }
+const results = [];
+let failures = 0;
 
-    const shot = `${OUT}/${p.name}${tag}.png`;
-    await page.screenshot({ path: shot, fullPage: false });
-    results.push({ page: p.name, status, errors, info, interactions, shot });
-    console.log(
-      `${p.name}: http ${status} | errors ${errors.length}` +
-        `${errors.length ? " -> " + errors.join(" || ") : ""}` +
-        ` | fallback ${info.fallback} | lit pixels ${info.litPixels}` +
-        `${info.gpuScene ? " | GPU offscreen lit " + info.gpuScene.nonZero + "/" + info.gpuScene.width + "x" + info.gpuScene.height : ""}` +
-        `${info.gpuSceneError ? " | GPU SCENE ERROR " + info.gpuSceneError : ""}` +
-        `${info.shaderMessages && info.shaderMessages.length ? " | SHADER " + info.shaderMessages.join(";") : ""}` +
-        `${info.validationError ? " | VALIDATION " + info.validationError : ""}`
-    );
-    await page.close();
-  }
-  await browser.close();
-  return results;
+function fail(run, message) {
+  run.problems.push(message);
 }
 
-const all = [];
-all.push(...(await run("Default (WebGPU when available)", { tag: "" })));
-all.push(...(await run("WebGPU forced OFF - Canvas2D fallback", { disableWebGPU: true, tag: "-fallback" })));
-all.push(...(await run("Mobile width 390px", { viewport: { width: 390, height: 844 }, tag: "-mobile" })));
-all.push(...(await run("Reduced motion", { reducedMotion: true, tag: "-reduced" })));
+for (const demo of DEMOS) {
+  for (const backend of BACKENDS) {
+    for (const mode of MODES) {
+      const ctx = await browser.newContext(mode.ctx);
+      const page = await ctx.newPage();
+      const run = { demo: demo.id, backend: backend.id, mode: mode.id, problems: [] };
+      const errors = [];
+      page.on("console", (m) => {
+        if (m.type() === "error") errors.push(m.text().slice(0, 200));
+      });
+      page.on("pageerror", (e) => errors.push("pageerror: " + e.message.slice(0, 200)));
 
-console.log("\n================ SUMMARY ================");
-const failures = [];
-all.forEach((r) => {
-  if (r.status !== 200) failures.push(`${r.page}: HTTP ${r.status}`);
-  if (r.errors.length) failures.push(`${r.page}: console errors ${r.errors.join(" | ")}`);
-  if (r.info && r.info.shaderMessages && r.info.shaderMessages.length) failures.push(`${r.page}: shader messages`);
-  if (r.info && r.info.validationError) failures.push(`${r.page}: ${r.info.validationError}`);
-  if (r.info && r.info.gpuScene && r.info.gpuScene.nonZero === 0) failures.push(`${r.page}: GPU path drew nothing`);
-  if (r.info && r.info.gpuSceneError) failures.push(`${r.page}: GPU scene error ${r.info.gpuSceneError}`);
-  if (r.info && r.info.litPixels === 0 && r.info.fallback && r.page !== "lab-index") failures.push(`${r.page}: Canvas2D fallback drew nothing`);
-  if (r.page === "gatekeeper" && r.interactions.callButtons === 0) failures.push("gatekeeper: call list is empty");
-  if (r.page === "delegation-tree" && !r.interactions.rejected) failures.push("delegation-tree: widening attempt was not rejected");
-  if (r.page === "delegation-tree" && !r.interactions.issued) failures.push("delegation-tree: valid narrowing was not issued");
-  if (r.page === "delegation-tree" && r.interactions.labels < 5) failures.push("delegation-tree: node labels missing");
-  if (r.page === "delegation-tree" && !r.interactions.replay) failures.push("delegation-tree: replay control missing");
-  if (r.page === "delegation-tree" && !r.interactions.speed) failures.push("delegation-tree: speed control missing");
-});
-if (!failures.length) console.log("All checks passed: HTTP 200, no console errors, scenes drawn, interactions behave.");
-else failures.forEach((f) => console.log("FAIL " + f));
-process.exit(failures.length ? 1 : 0);
+      const url = `${BASE}/${demo.path}?run=1${backend.param}${mode.query}`;
+      const response = await page.goto(url, { waitUntil: "load" });
+      if (!response || response.status() !== 200) fail(run, "HTTP " + (response && response.status()));
+
+      await page
+        .waitForFunction(() => Boolean(window.__lab && window.__lab.lab && window.__lab.lab.ready), null, { timeout: 30000 })
+        .catch(() => fail(run, "lab did not become ready"));
+      await page.waitForTimeout(1200);
+
+      const state = await page.evaluate(() => {
+        const lab = window.__lab && window.__lab.lab;
+        if (!lab) return null;
+        const stage = document.querySelector(".stage-wrap").getBoundingClientRect();
+        const labels = [...document.querySelectorAll(".lab-label")].map((el) => {
+          const r = el.getBoundingClientRect();
+          return {
+            text: el.textContent.trim().slice(0, 24),
+            x: r.x, y: r.y, w: r.width, h: r.height,
+            visible: getComputedStyle(el).opacity !== "0"
+          };
+        });
+        return {
+          backend: lab.backend,
+          quality: lab.quality,
+          playing: lab.playing,
+          fps: lab.fps,
+          stage: { x: stage.x, y: stage.y, w: stage.width, h: stage.height },
+          labels,
+          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+        };
+      });
+
+      if (!state) fail(run, "no lab state");
+      else {
+        if (backend.expect && state.backend !== backend.expect) {
+          fail(run, `backend reported ${state.backend}, expected ${backend.expect}`);
+        }
+        if (!state.backend) fail(run, "no backend label");
+        if (state.overflow > 1) fail(run, `horizontal overflow ${state.overflow}px`);
+        if (mode.id === "mobile-390" && state.quality !== "low") {
+          fail(run, "narrow screen should default to Low quality");
+        }
+        if (mode.id === "low-quality" && state.quality !== "low") {
+          fail(run, "?quality=low was ignored");
+        }
+        if (mode.id === "reduced-motion" && state.playing) {
+          fail(run, "reduced motion should start paused");
+        }
+
+        const stage = state.stage;
+        const visible = state.labels.filter((l) => l.visible);
+        for (const l of visible) {
+          if (l.x < stage.x - 1 || l.y < stage.y - 1 || l.x + l.w > stage.x + stage.w + 1 || l.y + l.h > stage.y + stage.h + 1) {
+            fail(run, `label "${l.text}" outside the canvas`);
+          }
+        }
+        for (let i = 0; i < visible.length; i++) {
+          for (let j = i + 1; j < visible.length; j++) {
+            const a = visible[i];
+            const b = visible[j];
+            const dx = Math.abs(a.x + a.w / 2 - (b.x + b.w / 2));
+            const dy = Math.abs(a.y + a.h / 2 - (b.y + b.h / 2));
+            if (dx < (a.w + b.w) / 2 - 1 && dy < (a.h + b.h) / 2 - 1) {
+              fail(run, `labels "${a.text}" and "${b.text}" overlap`);
+            }
+          }
+        }
+      }
+
+      if (errors.length) {
+        for (const e of errors.slice(0, 3)) fail(run, "console: " + e);
+      }
+
+      run.fps = state && state.fps;
+      run.backendName = state && state.backend;
+      run.quality = state && state.quality;
+
+      if (mode.id === "default") {
+        const stageBox = await page.locator(".stage-wrap").boundingBox();
+        if (stageBox) {
+          const file = join(OUT, `${demo.id}-${backend.id}.png`);
+          await page.screenshot({ path: file, clip: stageBox });
+          run.screenshot = file;
+        }
+      }
+
+      results.push(run);
+      if (run.problems.length) failures++;
+      await ctx.close();
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Palette sampling (WebGL backend, bloom off, colour probe on)        */
+/* ------------------------------------------------------------------ */
+
+async function sampleColours(demo) {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message.slice(0, 160)));
+  const url = `${BASE}/${demo.path}?backend=webgl&quality=low&colortest=1`;
+  await page.goto(url, { waitUntil: "load" });
+  await page.waitForFunction(() => Boolean(window.__lab && window.__lab.lab && window.__lab.lab.ready), null, { timeout: 30000 })
+    .catch(() => {});
+  await page.waitForTimeout(900);
+  const probe = await page.evaluate(() => {
+    const lab = window.__lab.lab;
+    const canvas = document.getElementById("stage").getBoundingClientRect();
+    const stage = document.querySelector(".stage-wrap").getBoundingClientRect();
+    return {
+      probe: lab._probe.map((p) => {
+        const world = p.mesh.getWorldPosition(p.mesh.position.clone());
+        const screen = lab.project(world, { x: 0, y: 0, visible: true });
+        return {
+          hex: p.hex,
+          x: screen.x + (canvas.x - stage.x),
+          y: screen.y + (canvas.y - stage.y)
+        };
+      })
+    };
+  });
+  const stageBox = await page.locator(".stage-wrap").boundingBox();
+  const shot = await page.screenshot({ clip: stageBox });
+  writeFileSync(join(OUT, `${demo.id}-colortest.png`), shot);
+  const dataUrl = "data:image/png;base64," + shot.toString("base64");
+
+  /* decode the screenshot in the browser and read swatch centres */
+  const scratch = await ctx.newPage();
+  const size = { width: stageBox.width, height: stageBox.height };
+  const sampled = await scratch.evaluate(async ({ url, probe, PROBE_WIDTH, PROBE_HEIGHT }) => {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const g = c.getContext("2d");
+    g.drawImage(img, 0, 0);
+    const scaleX = img.width / PROBE_WIDTH;
+    const scaleY = img.height / PROBE_HEIGHT;
+    return probe.map((p) => {
+      const d = g.getImageData(Math.round(p.x * scaleX), Math.round(p.y * scaleY), 1, 1).data;
+      return { hex: p.hex, rgb: [d[0], d[1], d[2]] };
+    });
+  }, { url: dataUrl, probe: probe.probe, PROBE_WIDTH: size.width, PROBE_HEIGHT: size.height });
+  await ctx.close();
+
+  const report = sampled.map((s) => {
+    const want = [parseInt(s.hex.slice(1, 3), 16), parseInt(s.hex.slice(3, 5), 16), parseInt(s.hex.slice(5, 7), 16)];
+    const delta = Math.max(...want.map((v, i) => Math.abs(v - s.rgb[i])));
+    return { hex: s.hex, got: s.rgb, delta };
+  });
+  return { report, errors };
+}
+
+/* ------------------------------------------------------------------ */
+/* Interaction + heap                                                  */
+/* ------------------------------------------------------------------ */
+
+async function interactions() {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message.slice(0, 160)));
+  await page.goto(`${BASE}/delegation-tree/?backend=webgl&quality=low`, { waitUntil: "load" });
+  await page.waitForFunction(() => Boolean(window.__lab), null, { timeout: 30000 });
+
+  await page.evaluate(() => window.__lab.tryWiden());
+  await page.waitForFunction(() => document.getElementById("verdict").className.includes("show"), null, { timeout: 15000 })
+    .catch(() => {});
+  const rejected = await page.locator("#verdict").innerText();
+  if (!/Rejected/.test(rejected)) errors.push("widening attempt was not rejected: " + rejected.slice(0, 80));
+
+  await page.evaluate(() => window.__lab.tryNarrow());
+  const issued = await page.locator("#verdict").innerText();
+  if (!/Issued/.test(issued)) errors.push("valid narrowing was not issued: " + issued.slice(0, 80));
+
+  const heapBefore = await page.evaluate(() => (performance.memory ? performance.memory.usedJSHeapSize : 0));
+  await page.waitForTimeout(4000);
+  const heapAfter = await page.evaluate(() => (performance.memory ? performance.memory.usedJSHeapSize : 0));
+
+  await page.keyboard.press("f");
+  const hud = await page.evaluate(() => {
+    const el = document.querySelector(".lab-fps");
+    return { on: el.dataset.on, text: el.textContent };
+  });
+  if (hud.on !== "1" || !/fps/.test(hud.text)) errors.push("F did not reveal the fps/backend label");
+
+  await ctx.close();
+  return { rejected, issued, hud, heapDeltaKb: Math.round((heapAfter - heapBefore) / 1024), errors };
+}
+
+/* ------------------------------------------------------------------ */
+/* No-GPU fallback: no WebGPU and no WebGL 2                           */
+/* ------------------------------------------------------------------ */
+
+async function fallback() {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    try {
+      Object.defineProperty(navigator, "gpu", { get: () => undefined, configurable: true });
+    } catch (err) {
+      /* ignore */
+    }
+    const original = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
+      if (type === "webgl2" || type === "webgl" || type === "webgpu") return null;
+      return original.call(this, type, ...rest);
+    };
+  });
+  const out = [];
+  for (const demo of DEMOS) {
+    const errors = [];
+    page.removeAllListeners("pageerror");
+    page.on("pageerror", (e) => errors.push(e.message.slice(0, 120)));
+    await page.goto(`${BASE}/${demo.path}?backend=webgl`, { waitUntil: "load" });
+    await page.waitForTimeout(2500);
+    const state = await page.evaluate(() => {
+      const el = document.getElementById("no-gpu");
+      const img = el && el.querySelector("img");
+      return {
+        shown: el && el.dataset.on === "1",
+        hasImg: Boolean(img),
+        imgIsData: Boolean(img && img.src.startsWith("data:image/")),
+        message: el ? el.textContent.trim().slice(0, 60) : ""
+      };
+    });
+    out.push({ demo: demo.id, ...state, errors });
+    if (!state.shown || !state.hasImg || !state.imgIsData || errors.length) out[out.length - 1].bad = true;
+  }
+  await ctx.close();
+  return out;
+}
+
+/* ------------------------------------------------------------------ */
+
+const colourChecks = [];
+for (const demo of DEMOS) colourChecks.push({ demo: demo.id, ...(await sampleColours(demo)) });
+const interact = await interactions();
+const fallbackChecks = await fallback();
+
+await browser.close();
+
+/* ------------------------------------------------------------------ */
+/* Report                                                             */
+/* ------------------------------------------------------------------ */
+
+console.log("=== modes ===");
+for (const r of results) {
+  console.log(
+    [
+      r.demo.padEnd(16),
+      r.backend.padEnd(6),
+      r.mode.padEnd(14),
+      (r.backendName || "?").padEnd(8),
+      "q:" + (r.quality || "?"),
+      "fps:" + (r.fps || 0),
+      r.problems.length ? "FAIL" : "ok"
+    ].join(" ")
+  );
+  for (const p of r.problems) console.log("   - " + p);
+}
+
+console.log("\n=== palette sampling (WebGL 2, bloom off) ===");
+for (const c of colourChecks) {
+  const bad = c.report.filter((r) => r.delta > 3);
+  console.log(
+    `${c.demo}: ` +
+      c.report.map((r) => `${r.hex}->${r.got.join(",")}${r.delta > 3 ? " (delta " + r.delta + ")" : ""}`).join("  ")
+  );
+  if (bad.length || c.errors.length) failures++;
+}
+
+console.log("\n=== no-GPU fallback (screenshot + message) ===");
+for (const f of fallbackChecks) {
+  console.log(`${f.demo}: shown=${f.shown} screenshot=${f.hasImg && f.imgIsData} "${f.message}"`);
+  if (f.bad) failures++;
+}
+
+console.log("\n=== interaction ===");
+console.log("widen  :", interact.rejected.split("\n")[0].slice(0, 90));
+console.log("narrow :", interact.issued.split("\n")[0].slice(0, 90));
+console.log("F hud  :", JSON.stringify(interact.hud));
+console.log("heap   : " + interact.heapDeltaKb + " kB growth over 4 s (indicative)");
+if (interact.errors.length) {
+  failures++;
+  for (const e of interact.errors) console.log("   - " + e);
+}
+
+console.log("\n=== summary ===");
+console.log(results.length + " page loads, failures: " + failures);
+console.log("screenshots:", OUT);
+process.exit(failures ? 1 : 0);

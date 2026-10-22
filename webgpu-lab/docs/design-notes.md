@@ -1,4 +1,4 @@
-# Design notes — Delegation Tree (WebGPU Lab)
+# Design notes — Delegation Tree (Three.js Lab)
 
 Written after querying the `ui-ux-pro-max` skill in `.opencode/skills/ui-ux-pro-max/`:
 
@@ -128,10 +128,33 @@ The delegation logic, scopes, SPIFFE IDs, narrowing diffs and the rejection mess
 the AgentIAM source. The **visual** constants below are invented for this demo and are documented
 here on purpose:
 
-- the radius ratio per hop (`0.62 / 0.62 / 0.60 / 0.50`), the placement factor and the directions of
-  each child inside its parent;
+- the child/parent radius ratio per hop (`0.74 / 0.70 / 0.62 / 0.50`) and the unit directions that
+  place each child shell inside its parent;
 - the colour ramp (the palette above) — AgentIAM does not define colours for scopes;
-- the contraction factor of 10% (chosen as the largest value that keeps a child ring inside its
-  parent);
-- the timings and the particle counts;
+- the contraction factor of 10% (the shell starts 10% larger and settles to its true size when the
+  token enters);
+- the timings, particle counts and bloom settings;
 - the label offsets and the collision-avoidance distances.
+
+## Three.js rebuild
+
+The first version of this demo drew the shells as nested rings on a 2D Canvas/WebGPU quad renderer.
+It was rebuilt in place on Three.js (r186, `three/webgpu`) without changing the data or the
+delegation logic. What that changed visually:
+
+- **Shells are spheres, not rings.** Each scope is a translucent shell with three great-circle rims,
+  so nesting is physical: a child shell sits inside its parent's volume. Two rings were not enough to
+  read as a sphere from an arbitrary orbit angle; three separates the silhouette from the interior.
+- **Radius ratios grew** from `0.62 / 0.62 / 0.60 / 0.50` to `0.74 / 0.70 / 0.62 / 0.50` so the inner
+  scopes have enough surface to be legible inside the outer one.
+- **The camera orbits.** The figure is no longer fitted to the canvas; the opening shot frames the
+  whole chain, and drag/zoom let you look into the nesting. Labels are DOM text positioned from
+  projected 3D anchors with SVG leader lines, so they stay readable while the camera moves.
+- **Bloom** is thresholded at 0.30 with strength 1.0 and radius 0.42, so only tokens, particles and
+  scope rims glow; the shells themselves stay dim. Low quality drops the bloom pass and shortens
+  trails.
+- **The rejection** is a 3D ring oriented perpendicular to the parent→child direction, expanding
+  from the boundary point over 0.7s, plus a red flash on the offending shell and scattered fragments.
+  The chip carries the real `caveat_diff` string, as before.
+- **Reduced motion** still starts paused with a visible Play button, no parallax, no drift and no
+  shell breathing.
