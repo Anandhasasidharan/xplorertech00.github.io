@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WebGPU Lab — visual explanations of AI agent security</title>
+<meta name="description" content="Small, self-contained WebGPU demos that explain reference monitoring and delegation scope narrowing to non-experts." />
+<style>
+  :root {
+    --bg-primary: #07080c;
+    --bg-secondary: #0c1017;
+    --gold: #d8b56c;
+    --green: #39ff88;
+    --amber: #ffbf5c;
+    --text-primary: #f2efe9;
+    --text-secondary: #b9b6ad;
+    --text-dim: #7a7780;
+    --border: rgba(255, 255, 255, 0.08);
+    --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-primary); color: var(--text-primary);
+    font-family: var(--font-sans); font-size: 16px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--gold); }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 40px 20px 64px; }
+  .crumbs { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 20px; }
+  .crumbs a { color: var(--text-dim); text-decoration: none; }
+  .crumbs a:hover { color: var(--gold); }
+  h1 { font-family: var(--font-serif); font-weight: 400; font-size: clamp(32px, 6vw, 52px); line-height: 1.08; margin: 0 0 14px; }
+  h1 em { font-style: italic; color: var(--gold); }
+  h2 { font-family: var(--font-serif); font-weight: 400; font-size: 24px; margin: 40px 0 12px; }
+  .lede { color: var(--text-secondary); font-size: 17px; max-width: 72ch; margin: 0 0 10px; }
+  .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 22px; }
+  .demo {
+    display: block; text-decoration: none; color: inherit;
+    background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+    transition: border-color .2s ease, transform .2s ease;
+  }
+  .demo:hover { border-color: rgba(216, 181, 108, .5); transform: translateY(-2px); }
+  .demo .tag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+  .demo h3 { font-family: var(--font-serif); font-weight: 400; font-size: 22px; margin: 8px 0 6px; }
+  .demo h3 em { font-style: italic; color: var(--gold); }
+  .demo p { color: var(--text-secondary); font-size: 14px; margin: 0 0 12px; }
+  .demo .src { font-size: 12px; color: var(--text-dim); }
+  .panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; }
+  .support { margin-top: 30px; }
+  .support ul { color: var(--text-secondary); padding-left: 20px; margin: 8px 0 0; }
+  .support li { margin-bottom: 6px; font-size: 14px; }
+  .small { font-size: 12.5px; color: var(--text-dim); }
+  footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-dim); display: flex; gap: 16px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumbs"><a href="../">Home</a> / WebGPU Lab</p>
+
+  <h1>WebGPU <em>Lab</em></h1>
+  <p class="lede">
+    Two small browser demos that explain how AI agents are kept honest, built from two of my own
+    projects. <strong>Gatekeeper</strong> shows an agent's tool calls flowing through a reference
+    monitor that allows, flags or blocks each one before it runs. <strong>Delegation Tree</strong> shows
+    a chain of agents where every hop may only narrow the authority it received — widening a scope is
+    refused before any token is issued. Everything renders with WebGPU when the browser supports it and
+    falls back to Canvas2D when it does not, so the idea is always visible.
+  </p>
+
+  <div class="demo-grid">
+    <a class="demo" href="gatekeeper/">
+      <span class="tag">From SENTRIX</span>
+      <h3>Gatekeeper — <em>reference monitor</em></h3>
+      <p>Particles are tool calls travelling toward a policy gate: allowed calls pass, flagged calls slow
+        down and change shape, blocked calls break apart at the gate.</p>
+      <span class="src">Open demo →</span>
+    </a>
+    <a class="demo" href="delegation-tree/">
+      <span class="tag">From AgentIAM</span>
+      <h3>Delegation Tree — <em>scope can only narrow</em></h3>
+      <p>Each agent's permission scope is drawn inside its parent's and shrinks at every hop; try to widen
+        it and the attempt is rejected with the scope that was exceeded.</p>
+      <span class="src">Open demo →</span>
+    </a>
+  </div>
+
+  <h2>What is actually running</h2>
+  <div class="panel">
+    <p style="margin-top:0;color:var(--text-secondary)">
+      These are not mock-ups. The gatekeeper demo re-implements SENTRIX's capability policy
+      (<code>AgentPolicy.check_tool</code>) and its injection classifier patterns, so each verdict and
+      each reason string is computed live in your browser. The delegation demo uses AgentIAM's real
+      narrowing rules from <code>scope_utils.py</code> and the real rejection message from
+      <code>attenuate.py</code>, over the delegation chain from the project's own demo seed.
+    </p>
+    <p class="small" style="margin-bottom:0">
+      Tool calls, arguments and payload wording come from those repositories. Where a sequence had to be
+      composed for the demo, the interface labels it as illustrative sample data. No secrets, tokens or
+      live scan results are included.
+    </p>
+  </div>
+
+  <h2>Browser support</h2>
+  <div class="panel support">
+    <p style="margin-top:0;color:var(--text-secondary)">
+      WebGPU needs a recent browser: Chrome/Edge 113+, Safari 18+, or Firefox with WebGPU enabled.
+    </p>
+    <ul>
+      <li>With WebGPU: instanced-quad rendering on the GPU, drawn by a small shared renderer
+        (<code>shared/gpu.js</code>).</li>
+      <li>Without WebGPU: the same scene is drawn with a Canvas2D fallback, and a banner explains why.</li>
+      <li>With <code>prefers-reduced-motion</code> enabled, the simulation starts paused with a visible
+        Play button.</li>
+      <li>Every demo is keyboard accessible and never relies on colour alone to convey a decision.</li>
+    </ul>
+  </div>
+
+  <footer>
+    <a href="../">← Back to the portfolio</a>
+    <a href="https://github.com/Anandhasasidharan/SENTRIX" target="_blank" rel="noopener">SENTRIX source</a>
+    <a href="https://github.com/Anandhasasidharan/AGENT-IAM" target="_blank" rel="noopener">AgentIAM source</a>
+    <a href="../prompt-injection-viz/">Prompt Injection Visualizer</a>
+  </footer>
+</div>
+</body>
+</html>
