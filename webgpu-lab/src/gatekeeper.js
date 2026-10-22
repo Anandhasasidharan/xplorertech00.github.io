@@ -445,7 +445,6 @@ function draw() {
   gateGlowMat.color.copy(COL_HOT).lerp(COL_BLOCK, gatePulse * 0.9);
   gateGlowMat.opacity = 0.2 + gateFlash * 0.12 + gatePulse * 0.1;
 
-  if (hoverId) positionTooltip();
 }
 
 /* Clamped tooltip placement for a hovered particle. */

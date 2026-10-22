@@ -766,14 +766,25 @@ export class Lab {
       if (!L.vis) continue;
       L.x = clamp(L.x, L.w / 2 + 6, W - L.w / 2 - 6);
       L.y = clamp(L.y, L.h / 2 + 6, H - L.h / 2 - 6);
-      L.el.style.opacity = "1";
-      L.el.style.transform =
-        "translate3d(" + Math.round(L.x) + "px," + Math.round(L.y) + "px,0) translate(-50%,-50%)";
-      L.line.setAttribute("x1", L.ax.toFixed(1));
-      L.line.setAttribute("y1", L.ay.toFixed(1));
-      L.line.setAttribute("x2", L.x.toFixed(1));
-      L.line.setAttribute("y2", (L.y + (L.offset[1] < 0 ? L.h / 2 : -L.h / 2)).toFixed(1));
-      L.line.setAttribute("opacity", "1");
+
+      /* only touch the DOM when something actually moved: a still camera or a
+         paused demo then costs no string building or style writes per frame */
+      const nx = Math.round(L.x);
+      const ny = Math.round(L.y);
+      const ay = L.y + (L.offset[1] < 0 ? L.h / 2 : -L.h / 2);
+      if (L.px !== nx || L.py !== ny || L.pa !== Math.round(L.ay) || L.painted !== true) {
+        L.el.style.transform = "translate3d(" + nx + "px," + ny + "px,0) translate(-50%,-50%)";
+        L.line.setAttribute("x1", L.ax.toFixed(1));
+        L.line.setAttribute("y1", L.ay.toFixed(1));
+        L.line.setAttribute("x2", L.x.toFixed(1));
+        L.line.setAttribute("y2", ay.toFixed(1));
+        L.px = nx;
+        L.py = ny;
+        L.pa = Math.round(L.ay);
+        L.painted = true;
+      }
+      if (L.el.style.opacity !== "1") L.el.style.opacity = "1";
+      if (L.line.getAttribute("opacity") !== "1") L.line.setAttribute("opacity", "1");
     }
   }
 
