@@ -219,9 +219,10 @@
  * shows the same idea, just less shiny.
  *
  * Primitive shape:
- *   { x, y, w, h, rot, color:[r,g,b,a], shape, extra }
- *   shape: 'disc' | 'square' | 'ring' | 'triangle' | 'segment'
- *   extra: ring thickness (0..1 of radius), triangle pointiness, segment cap
+ *   { x, y, w, h, rot, color:[r,g,b,a], shape, extra, dash }
+ *   shape: 'disc' | 'square' | 'ring' | 'diamond' | 'segment'
+ *   extra: ring thickness (0..1 of radius), segment cap
+ *   dash:  0 = solid rim; > 0 = number of dashes around a ring
  *
  * No frameworks, no bundler required. This file is plain ES5-ish JS that is
  * concatenated into each demo page by ../build.mjs.
@@ -284,9 +285,16 @@
       } else if (shape === "ring") {
         var thickness = p.extra === undefined ? 0.12 : p.extra;
         ctx.lineWidth = Math.max(1, hw * 2 * thickness);
+        var radius = Math.max(1, hw - ctx.lineWidth / 2);
+        if (p.dash) {
+          // match the shader: `dash` is the number of dashes around the rim
+          var step = (Math.PI * 2 * radius) / p.dash;
+          ctx.setLineDash([step * 0.5, step * 0.5]);
+        }
         ctx.beginPath();
-        ctx.arc(0, 0, Math.max(1, hw - ctx.lineWidth / 2), 0, Math.PI * 2);
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
         ctx.stroke();
+        if (p.dash) ctx.setLineDash([]);
       } else if (shape === "diamond") {
         var dr = Math.min(hw, hh);
         ctx.beginPath();
@@ -333,6 +341,7 @@
     "  @location(2) color : vec4f,",
     "  @location(3) shape : f32,",
     "  @location(4) extra : f32,",
+    "  @location(5) dash : f32,",
     "};",
     "",
     "@group(0) @binding(0) var<uniform> u : vec4f; // res.x, res.y, time, dpr",
@@ -345,7 +354,8 @@
     "  @location(2) rot : f32,",
     "  @location(3) color : vec4f,",
     "  @location(4) shape : f32,",
-    "  @location(5) extra : f32",
+    "  @location(5) extra : f32,",
+    "  @location(6) dash : f32",
     ") -> VSOut {",
     "  var corners = array<vec2f, 6>(",
     "    vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(-1.0, 1.0),",
@@ -364,6 +374,7 @@
     "  out.color = color;",
     "  out.shape = shape;",
     "  out.extra = extra;",
+    "  out.dash = dash;",
     "  return out;",
     "}"
   ].join("\n");
@@ -395,6 +406,10 @@
     "    let r = in.half.x;",
     "    let t = max(1.0, r * 2.0 * in.extra);",
     "    d = abs(sdCircle(p, r)) - t * 0.5;",
+    "    if (in.dash > 0.5) {",
+    "      let a = atan2(p.y, p.x) / 6.2831853 + 0.5;",
+    "      if (fract(a * in.dash) > 0.5) { discard; }",
+    "    }",
     "  } else if (in.shape < 3.5) {",
     "    d = abs(p.x) + abs(p.y) - min(in.half.x, in.half.y);",
     "  } else {",
@@ -444,7 +459,8 @@
               { shaderLocation: 2, offset: 16, format: "float32" },
               { shaderLocation: 3, offset: 20, format: "float32x4" },
               { shaderLocation: 4, offset: 36, format: "float32" },
-              { shaderLocation: 5, offset: 40, format: "float32" }
+              { shaderLocation: 5, offset: 40, format: "float32" },
+              { shaderLocation: 6, offset: 44, format: "float32" }
             ]
           }
         ]
@@ -510,12 +526,14 @@
       buf[o + 2] = (p.w / 2) * this.dpr;
       buf[o + 3] = (p.h / 2) * this.dpr;
       buf[o + 4] = p.rot || 0;
-      buf[o + 5] = p.color[0];
-      buf[o + 6] = p.color[1];
-      buf[o + 7] = p.color[2];
+      // colours are given as 0-255 and the shader works in 0-1
+      buf[o + 5] = p.color[0] / 255;
+      buf[o + 6] = p.color[1] / 255;
+      buf[o + 7] = p.color[2] / 255;
       buf[o + 8] = p.color[3] === undefined ? 1 : p.color[3];
       buf[o + 9] = SHAPES[p.shape] === undefined ? 0 : SHAPES[p.shape];
       buf[o + 10] = p.extra === undefined ? 0 : p.extra;
+      buf[o + 11] = p.dash === undefined ? 0 : p.dash;
     }
     this.count = n;
 
@@ -547,7 +565,8 @@
    * (headless browsers). Uses the same pipeline and the same instance
    * packing as the on-screen path.
    */
-  WebGPUStage.prototype.renderToPixels = function (prims, width, height) {
+  WebGPUStage.prototype.renderToPixels = function (prims, width, height, options) {
+    options = options || {};
     var device = this.device;
     var bytesPerRow = Math.ceil((width * 4) / 256) * 256;
     var texture = device.createTexture({
@@ -571,16 +590,20 @@
       buf[o + 2] = p.w / 2;
       buf[o + 3] = p.h / 2;
       buf[o + 4] = p.rot || 0;
-      buf[o + 5] = p.color[0];
-      buf[o + 6] = p.color[1];
-      buf[o + 7] = p.color[2];
+      // colours are given as 0-255 and the shader works in 0-1
+      buf[o + 5] = p.color[0] / 255;
+      buf[o + 6] = p.color[1] / 255;
+      buf[o + 7] = p.color[2] / 255;
       buf[o + 8] = p.color[3] === undefined ? 1 : p.color[3];
       buf[o + 9] = SHAPES[p.shape] === undefined ? 0 : SHAPES[p.shape];
       buf[o + 10] = p.extra === undefined ? 0 : p.extra;
+      buf[o + 11] = p.dash === undefined ? 0 : p.dash;
     }
     var uniforms = new Float32Array([width, height, 0, 1]);
     device.queue.writeBuffer(this.uniformBuffer, 0, uniforms);
     device.queue.writeBuffer(this.instanceBuffer, 0, buf, 0, n * FLOATS_PER_INSTANCE);
+    // the probe runs after this pass is submitted, so it can reuse the
+    // shared buffers without disturbing the scene that was just queued
 
     var encoder = device.createCommandEncoder();
     var pass = encoder.beginRenderPass({
@@ -605,7 +628,8 @@
     );
     device.queue.submit([encoder.finish()]);
 
-    return readBuffer.mapAsync(GPUMapMode.READ).then(function () {
+    var probePromise = options.withPixels ? probePremultiplied(this) : Promise.resolve(false);
+    return Promise.all([readBuffer.mapAsync(GPUMapMode.READ), probePromise]).then(function (results) {
       var data = new Uint8Array(readBuffer.getMappedRange());
       var nonZero = 0;
       for (var row = 0; row < height; row++) {
@@ -614,12 +638,126 @@
           if (data[idx + 3] > 0) nonZero++;
         }
       }
+      var pixels = null;
+      var premultiplied = results[1];
+      var pixels = null;
+      var premultiplied = results[1];
+      if (options.debug) {
+        return {
+          premultiplied: premultiplied,
+          raw: [data[0], data[1], data[2], data[3]],
+          rawMid: [
+            data[Math.floor(height / 2) * bytesPerRow + Math.floor(width / 2) * 4],
+            data[Math.floor(height / 2) * bytesPerRow + Math.floor(width / 2) * 4 + 1],
+            data[Math.floor(height / 2) * bytesPerRow + Math.floor(width / 2) * 4 + 2],
+            data[Math.floor(height / 2) * bytesPerRow + Math.floor(width / 2) * 4 + 3]
+          ],
+          nonZero: nonZero
+        };
+      }
+      if (options.withPixels) {
+        // Tight copy (without the row padding) as base64, so a caller can
+        // paint the real GPU output into a 2D canvas.
+        // The channel order follows the canvas format and the alpha may be
+        // premultiplied - both are undone here so the caller receives
+        // straight (non-premultiplied) RGBA.
+        var format = navigator.gpu.getPreferredCanvasFormat();
+        var swap = format.indexOf("bgra") === 0;
+        var out = new Uint8Array(width * height * 4);
+        for (var row = 0; row < height; row++) {
+          var src = row * bytesPerRow;
+          for (var col = 0; col < width; col++) {
+            var si = src + col * 4;
+            var di = (row * width + col) * 4;
+            var r = data[si], g = data[si + 1], b = data[si + 2], a = data[si + 3];
+            if (swap) { var tmp = r; r = b; b = tmp; }
+            if (premultiplied && a > 0 && a < 255) {
+              r = Math.min(255, Math.round((r * 255) / a));
+              g = Math.min(255, Math.round((g * 255) / a));
+              b = Math.min(255, Math.round((b * 255) / a));
+            }
+            out[di] = r; out[di + 1] = g; out[di + 2] = b; out[di + 3] = a;
+          }
+        }
+        var binary = "";
+        for (var i = 0; i < out.length; i++) binary += String.fromCharCode(out[i]);
+        pixels = typeof btoa === "function" ? btoa(binary) : null;
+      }
       readBuffer.unmap();
       readBuffer.destroy();
       texture.destroy();
-      return { nonZero: nonZero, width: width, height: height, instances: n };
+      return { nonZero: nonZero, width: width, height: height, instances: n, pixels: pixels };
     });
   };
+
+  /**
+   * Renders a single half-transparent white quad into a 2x2 target and
+   * reports whether the backend stored premultiplied colour. The blend
+   * convention is not the same everywhere, so it is measured rather than
+   * assumed.
+   */
+  function probePremultiplied(stage) {
+    var device = stage.device;
+    var format = navigator.gpu.getPreferredCanvasFormat();
+    var texture = device.createTexture({
+      size: [2, 2],
+      format: format,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC
+    });
+    var buffer = device.createBuffer({
+      size: 256,
+      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
+    });
+    // the probe owns its uniform and instance buffers so it cannot disturb
+    // the scene that is being rendered
+    var uniform = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    var instance = device.createBuffer({
+      size: FLOATS_PER_INSTANCE * 4,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+    var bindGroup = device.createBindGroup({
+      layout: stage.pipeline.getBindGroupLayout(0),
+      entries: [{ binding: 0, resource: { buffer: uniform } }]
+    });
+
+    // a half-transparent white quad covering the whole 2x2 target
+    var probe = new Float32Array(FLOATS_PER_INSTANCE);
+    probe[0] = 1; probe[1] = 1; probe[2] = 1; probe[3] = 1;
+    probe[4] = 0; probe[5] = 255; probe[6] = 255; probe[7] = 255; probe[8] = 128;
+    probe[9] = 0; probe[10] = 0; probe[11] = 0;
+    device.queue.writeBuffer(uniform, 0, new Float32Array([2, 2, 0, 1]));
+    device.queue.writeBuffer(instance, 0, probe, 0, FLOATS_PER_INSTANCE);
+
+    var encoder = device.createCommandEncoder();
+    var pass = encoder.beginRenderPass({
+      colorAttachments: [
+        { view: texture.createView(), clearValue: { r: 0, g: 0, b: 0, a: 0 }, loadOp: "clear", storeOp: "store" }
+      ]
+    });
+    pass.setPipeline(stage.pipeline);
+    pass.setBindGroup(0, bindGroup);
+    pass.setVertexBuffer(0, instance);
+    pass.draw(6, 1, 0, 0);
+    pass.end();
+    encoder.copyTextureToBuffer({ texture: texture }, { buffer: buffer, bytesPerRow: 256, rowsPerImage: 2 }, [2, 2]);
+    device.queue.submit([encoder.finish()]);
+
+    return buffer.mapAsync(GPUMapMode.READ).then(function () {
+      var data = new Uint8Array(buffer.getMappedRange());
+      var r = data[0];
+      var a = data[3];
+      buffer.unmap();
+      buffer.destroy();
+      uniform.destroy();
+      instance.destroy();
+      texture.destroy();
+      // half the colour stored => the target holds premultiplied colour
+      return a > 0 && r < 200;
+    });
+  }
 
   WebGPUStage.prototype.destroy = function () {
     try {
