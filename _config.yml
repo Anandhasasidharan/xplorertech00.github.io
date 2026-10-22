@@ -109,6 +109,12 @@ exclude:
   - prompt-injection-viz/README.md
   - prompt-injection-viz/.gitignore
   - prompt-injection-viz/.oxlintrc.json
+  - webgpu-lab/src/
+  - webgpu-lab/shared/
+  - webgpu-lab/docs/
+  - webgpu-lab/build.mjs
+  - webgpu-lab/verify.mjs
+  - webgpu-lab/README.md
 
 include:
   - _pages
