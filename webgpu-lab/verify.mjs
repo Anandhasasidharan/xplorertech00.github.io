@@ -1,6 +1,7 @@
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { tmpdir } from "node:os";
 
 /**
  * Verification for the WebGPU Lab.
@@ -18,7 +19,9 @@ import { resolve } from "node:path";
 
 const BASE = process.env.BASE_URL || "http://127.0.0.1:4000";
 const LAB = `${BASE}/xplorertech00.github.io/webgpu-lab`;
-const OUT = process.env.OUT_DIR || resolve(process.cwd(), "webgpu-lab/docs");
+// The curated screenshots in webgpu-lab/docs/ are produced by capture.mjs;
+// the verification run keeps its own throwaway copies.
+const OUT = process.env.OUT_DIR || resolve(tmpdir(), "webgpu-lab-verify");
 mkdirSync(OUT, { recursive: true });
 
 const PAGES = [
@@ -123,6 +126,9 @@ async function run(label, { disableWebGPU, reducedMotion, viewport, tag }) {
     }
     if (p.name === "delegation-tree") {
       interactions.nodeButtons = await page.locator("#nodes button").count();
+      interactions.replay = await page.locator("#replay").count();
+      interactions.speed = await page.locator("#speed").count();
+      interactions.labels = await page.locator(".node-label").count();
       await page.locator("#widen").click();
       interactions.widenVerdict = (await page.locator("#verdict").textContent() || "").trim().slice(0, 140);
       interactions.rejected = await page.locator("#verdict.rejected").count();
@@ -168,6 +174,9 @@ all.forEach((r) => {
   if (r.page === "gatekeeper" && r.interactions.callButtons === 0) failures.push("gatekeeper: call list is empty");
   if (r.page === "delegation-tree" && !r.interactions.rejected) failures.push("delegation-tree: widening attempt was not rejected");
   if (r.page === "delegation-tree" && !r.interactions.issued) failures.push("delegation-tree: valid narrowing was not issued");
+  if (r.page === "delegation-tree" && r.interactions.labels < 5) failures.push("delegation-tree: node labels missing");
+  if (r.page === "delegation-tree" && !r.interactions.replay) failures.push("delegation-tree: replay control missing");
+  if (r.page === "delegation-tree" && !r.interactions.speed) failures.push("delegation-tree: speed control missing");
 });
 if (!failures.length) console.log("All checks passed: HTTP 200, no console errors, scenes drawn, interactions behave.");
 else failures.forEach((f) => console.log("FAIL " + f));

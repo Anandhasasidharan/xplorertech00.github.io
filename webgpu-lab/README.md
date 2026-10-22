@@ -44,11 +44,25 @@ text** as well as colour.
 A human operator delegates to a manager agent, the manager to a worker, the worker to tools. Each
 agent's permission scope is drawn as a ring **inside** its parent's ring and shrinks at every hop.
 
+- The figure is fitted to the canvas: the bounding circle of the outermost scope is measured and
+  scaled, so no ring is ever clipped, at any size.
+- Each hop has its own colour (warm gold → amber → teal → cool blue) and its own marker shape
+  (square = human, diamond = agent, disc = tool; the temporary tool gets a dashed rim).
+- A capability token travels from Alice down each delegation path. When it enters a child scope the
+  scope contracts by the real attenuation and a chip shows the real diff (`resources 2 -> 1,
+  operations 2 -> 1`), read live from the data.
 - Click a node (or use the list / arrow keys) to select it. The panel shows its SPIFFE ID, who
-  delegated to it, the narrowing diff, and its exact scopes.
-- **Try to widen scope** — attempts to grant the child more than the parent holds. The attempt is
-  rejected, the offending node flashes, and the message names the scope that was exceeded.
-- **Try a valid narrowing** — a legitimate reduction of the parent's scope, which is issued.
+  delegated to it, the narrowing diff, and its exact scopes. Hovering brightens the scope and shows
+  a tooltip.
+- **Try to widen scope** — attempts to grant the child more than the parent holds. The token stops at
+  the boundary, a red shockwave expands, the offending scope flashes, and the message names the
+  scope that was exceeded.
+- **Try a valid narrowing** — a legitimate reduction of the parent's scope, which is issued with a
+  contracting scope and a popping token.
+- Controls: Play/Pause (also `Space`), a speed slider, and **Replay delegation**.
+
+The colour and motion decisions, and which recommendations were taken from the design skill, are
+recorded in [`docs/design-notes.md`](docs/design-notes.md).
 
 ---
 
@@ -62,8 +76,10 @@ agent's permission scope is drawn as a ring **inside** its parent's ring and shr
   `segment`.
 - **GPU path** — one instanced-quad draw call. The vertex shader places and rotates each quad; the
   fragment shader evaluates a signed-distance function per shape (circle, box, ring, diamond,
-  capsule). Uniforms carry the resolution and time; instance data carries position, size,
-  rotation, colour, shape and shape parameters.
+  capsule) and can cut a ring into dashes. Uniforms carry the resolution and time; instance data
+  carries position, size, rotation, colour, shape, shape parameters and dash count.
+- **Colour** — primitives carry 0-255 RGB and the renderer normalises them to the 0-1 range the
+  shader expects, so the GPU path and the Canvas2D path produce identical colour.
 - **Fallback path** — the same primitive array is drawn with Canvas2D. Because both paths consume
   the same scene, the fallback is the same picture with less polish, never a blank page.
 - **Loop** — `requestAnimationFrame` with delta time; `prefers-reduced-motion` starts the loop
@@ -134,10 +150,12 @@ not issued).
 
 ## Known limitations
 
-- **Headless browsers do not composite a WebGPU canvas**, so a headless screenshot of the GPU path
-  is blank. `verify.mjs` therefore renders the *same* scene into an offscreen texture and reads the
-  pixels back, which proves the GPU path draws geometry. The screenshots in `docs/` marked
-  `-fallback` are the Canvas2D renderer, and look equivalent apart from the shader effects.
+- **Headless browsers do not composite a WebGPU canvas**, so a normal headless screenshot of the
+  GPU path is blank. Two workarounds are used instead:
+  `verify.mjs` renders the *same* scene into an offscreen texture and counts the lit pixels, and
+  `capture.mjs` reads those pixels back and paints them into a 2D canvas — that is how the
+  `*-webgpu.png` screenshots in `docs/` are real GPU output. The `*-fallback.png` screenshots are
+  the Canvas2D renderer.
 - The Gatekeeper demo is a **visualisation of a decision pipeline**, not an execution harness: the
   calls do not run against a real agent or a real tool.
 - The classifier port reproduces SENTRIX's **regex layer only**. SENTRIX also has a TF-IDF
