@@ -1,0 +1,447 @@
+<!-- ─────────────────────────────────────────────────────────────────────────
+     Designer tools section — self-contained block (CSS + HTML + JS).
+
+     Replace this file with your own designer-tools-section.html when it
+     arrives; the block is inserted into index.html verbatim after the hero
+     and before the "Featured work" section.
+
+     Requirements honoured here:
+       * accent follows the site: --fx-accent: var(--gold)
+       * a link to prompt-injection-viz/ that resolves from the homepage
+       * "Source" links to the projects hub and ORYTH
+       * the form produces three prompts, each with a working Copy button
+       * no Liquid syntax inside the inline JavaScript
+     ──────────────────────────────────────────────────────────────────────── -->
+<style>
+  .fx-section {
+    --fx-accent: var(--gold);
+    --fx-accent-soft: rgba(216, 181, 108, 0.14);
+    --fx-line: rgba(255, 255, 255, 0.08);
+    padding: 72px 0 8px;
+  }
+  .fx-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .fx-kicker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--fx-accent);
+    margin: 0 0 12px;
+  }
+  .fx-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.9rem, 4.2vw, 3rem);
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0 0 12px;
+  }
+  .fx-title em { font-style: italic; color: var(--fx-accent); }
+  .fx-lede {
+    color: var(--text-secondary);
+    max-width: 62ch;
+    margin: 0 0 28px;
+    line-height: 1.7;
+  }
+  .fx-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  @media (min-width: 900px) {
+    .fx-grid { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); }
+  }
+  .fx-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .fx-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+  }
+  .fx-card > p {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin: 0 0 18px;
+  }
+  .fx-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin: 0 0 8px;
+  }
+  .fx-textarea {
+    width: 100%;
+    min-height: 130px;
+    resize: vertical;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font: inherit;
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+  .fx-textarea:focus {
+    outline: none;
+    border-color: var(--fx-accent);
+    box-shadow: 0 0 0 3px var(--fx-accent-soft);
+  }
+  .fx-select {
+    width: 100%;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+  .fx-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .fx-button {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 10px 20px;
+    cursor: pointer;
+    background: var(--fx-accent);
+    color: #14110a;
+    transition: transform 0.18s ease, filter 0.18s ease;
+  }
+  .fx-button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .fx-button:focus-visible { outline: 2px solid var(--fx-accent); outline-offset: 3px; }
+  .fx-button[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .fx-note { font-size: 0.75rem; color: var(--text-dim); }
+  .fx-error {
+    font-size: 0.78rem;
+    color: #ffb3ba;
+    margin: 12px 0 0;
+    display: none;
+  }
+  .fx-error.is-shown { display: block; }
+  .fx-results { display: grid; gap: 14px; }
+  .fx-prompt {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-primary);
+    padding: 16px;
+  }
+  .fx-prompt-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .fx-prompt-title {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--fx-accent);
+  }
+  .fx-copy {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 14px;
+    cursor: pointer;
+  }
+  .fx-copy:hover { border-color: var(--fx-accent); color: var(--text-primary); }
+  .fx-copy:focus-visible { outline: 2px solid var(--fx-accent); outline-offset: 2px; }
+  .fx-copy.is-copied { border-color: var(--fx-accent); color: var(--fx-accent); }
+  .fx-prompt pre {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .fx-empty {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    text-align: center;
+  }
+  .fx-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 22px;
+    font-size: 0.82rem;
+  }
+  .fx-links a { color: var(--text-secondary); text-decoration: none; border-bottom: 1px solid var(--border); }
+  .fx-links a:hover { color: var(--fx-accent); border-color: var(--fx-accent); }
+</style>
+
+<section class="fx-section" aria-labelledby="fx-heading">
+  <div class="fx-shell">
+    <p class="fx-kicker">Tools for designers</p>
+    <h2 class="fx-title" id="fx-heading">Turn a design brief into <em>usable AI prompts</em></h2>
+    <p class="fx-lede">
+      Write the brief once. This small helper turns it into three working prompts — a product
+      specification, a manufacturability review, and a safety-and-compliance checklist — so you can
+      paste them straight into the AI tool you already use. It runs entirely in your browser.
+    </p>
+
+    <div class="fx-grid">
+      <div class="fx-card">
+        <h3>Your brief</h3>
+        <p>Plain language is fine. Mention the part, the material, and who uses it.</p>
+        <form id="fx-form" novalidate>
+          <label class="fx-label" for="fx-brief">What are you designing?</label>
+          <textarea
+            id="fx-brief"
+            class="fx-textarea"
+            placeholder="e.g. A 2 kg handheld enclosure for a handheld thermal camera, injection moulded ABS, used by field technicians outdoors."
+          ></textarea>
+
+          <label class="fx-label" for="fx-lens" style="margin-top: 16px">Which lens do you want?</label>
+          <select id="fx-lens" class="fx-select">
+            <option value="all">All three</option>
+            <option value="spec">Product specification</option>
+            <option value="dfm">Manufacturability review</option>
+            <option value="safety">Safety &amp; compliance checklist</option>
+          </select>
+
+          <div class="fx-actions">
+            <button type="submit" class="fx-button" id="fx-submit">Generate prompts</button>
+            <span class="fx-note" id="fx-note">No account, no upload.</span>
+          </div>
+          <p class="fx-error" id="fx-error" role="alert">
+            Add a short description of the design first.
+          </p>
+        </form>
+      </div>
+
+      <div class="fx-card">
+        <h3>Prompts</h3>
+        <p>Each prompt is a starting point — edit it before you use it.</p>
+        <div class="fx-results" id="fx-results">
+          <div class="fx-empty" id="fx-empty">
+            Your three prompts will appear here.
+          </div>
+        </div>
+
+        <div class="fx-links">
+          <a href="{{ '/prompt-injection-viz/' | relative_url }}">See how prompt injection gets detected →</a>
+          <a href="https://github.com/Anandhasasidharan/projects" target="_blank" rel="noopener">Source: project portfolio →</a>
+          <a href="https://github.com/Anandhasasidharan/ORYTH" target="_blank" rel="noopener">Source: ORYTH →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  "use strict";
+
+  var TEMPLATES = {
+    spec: {
+      title: "Product specification",
+      build: function (brief) {
+        return [
+          "You are a senior product designer writing a specification sheet.",
+          "",
+          "Brief:",
+          brief,
+          "",
+          "Produce:",
+          "1. A one-paragraph description of the product and who it is for.",
+          "2. Key dimensions and material assumptions - list what you are assuming and why.",
+          "3. The main user interactions, step by step, as a numbered list.",
+          "4. Open questions for the team, ordered by how much they block the design.",
+          "",
+          "Mark every assumption clearly as an assumption. Do not invent measurements."
+        ].join("\n");
+      }
+    },
+    dfm: {
+      title: "Manufacturability review",
+      build: function (brief) {
+        return [
+          "You are a design-for-manufacture engineer reviewing an early concept.",
+          "",
+          "Brief:",
+          brief,
+          "",
+          "Review the concept and list, in priority order:",
+          "1. Features that look expensive or hard to manufacture, and a simpler alternative for each.",
+          "2. Parting lines, draft angles, wall thickness and tight radii to think about.",
+          "3. Assembly steps that could be reduced or automated.",
+          "4. Three questions to ask the supplier before the next iteration.",
+          "",
+          "Reason from general manufacturing practice. State your assumptions and never invent tolerances."
+        ].join("\n");
+      }
+    },
+    safety: {
+      title: "Safety & compliance checklist",
+      build: function (brief) {
+        return [
+          "You are a safety and compliance reviewer preparing a first-pass checklist for an industrial design team.",
+          "",
+          "Brief:",
+          brief,
+          "",
+          "Produce a checklist covering:",
+          "1. User hazards and misuse cases, one line each.",
+          "2. Which risks need a guarding, warning or marking decision.",
+          "3. The standards, regulations or internal procedures that the team should confirm with a specialist.",
+          "",
+          "Do not cite a specific standard number unless you are certain of it - list the topic and let the team verify."
+        ].join("\n");
+      }
+    }
+  };
+
+  var ORDER = ["spec", "dfm", "safety"];
+
+  function byId(id) {
+    return document.getElementById(id);
+  }
+
+  function buildPrompts(brief, lens) {
+    var keys = lens && lens !== "all" ? [lens] : ORDER;
+    return keys.map(function (key) {
+      var tpl = TEMPLATES[key];
+      return { key: key, title: tpl.title, text: tpl.build(brief) };
+    });
+  }
+
+  function copyText(text, button) {
+    var done = function () {
+      var original = button.getAttribute("data-label") || button.textContent;
+      button.setAttribute("data-label", original);
+      button.textContent = "Copied ✓";
+      button.classList.add("is-copied");
+      window.setTimeout(function () {
+        button.textContent = original;
+        button.classList.remove("is-copied");
+      }, 1800);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {
+        fallbackCopy(text, done);
+      });
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+
+  function fallbackCopy(text, done) {
+    var area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+    try {
+      document.execCommand("copy");
+    } catch (e) {
+      /* clipboard unavailable - the prompt is still selectable on screen */
+    }
+    document.body.removeChild(area);
+    done();
+  }
+
+  function render(prompts) {
+    var results = byId("fx-results");
+    results.innerHTML = "";
+    prompts.forEach(function (prompt) {
+      var wrap = document.createElement("div");
+      wrap.className = "fx-prompt";
+
+      var head = document.createElement("div");
+      head.className = "fx-prompt-head";
+
+      var title = document.createElement("span");
+      title.className = "fx-prompt-title";
+      title.textContent = prompt.title;
+
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "fx-copy";
+      button.textContent = "Copy";
+      button.setAttribute("aria-label", "Copy the " + prompt.title + " prompt");
+      button.addEventListener("click", function () {
+        copyText(prompt.text, button);
+      });
+
+      head.appendChild(title);
+      head.appendChild(button);
+
+      var pre = document.createElement("pre");
+      pre.textContent = prompt.text;
+
+      wrap.appendChild(head);
+      wrap.appendChild(pre);
+      results.appendChild(wrap);
+    });
+  }
+
+  function init() {
+    var form = byId("fx-form");
+    if (!form) return;
+
+    var brief = byId("fx-brief");
+    var lens = byId("fx-lens");
+    var error = byId("fx-error");
+    var note = byId("fx-note");
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var value = brief.value.trim();
+
+      if (!value) {
+        error.classList.add("is-shown");
+        brief.focus();
+        return;
+      }
+      error.classList.remove("is-shown");
+
+      render(buildPrompts(value, lens.value));
+      note.textContent = "Three prompts ready - copy them into your AI tool.";
+    });
+
+    brief.addEventListener("input", function () {
+      if (brief.value.trim()) error.classList.remove("is-shown");
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
