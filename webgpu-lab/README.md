@@ -168,6 +168,9 @@ not issued).
 
 ## How it was made
 
+> **TODO — to be written by me.** The guiding questions are in the HTML comment below; the section
+> stays a placeholder until I write it.
+
 <!-- TODO: fill this in yourself, honestly.
 
 Suggested points to cover:
