@@ -90,7 +90,19 @@ permalink: /
   </div>
 
   <div class="featured-grid">
-    <a class="spotlight-card spotlight-card--large" href="{{ '/projects/verialign/' | relative_url }}">
+    <a class="spotlight-card spotlight-card--large" href="{{ '/prompt-injection-viz/' | relative_url }}">
+      <span class="spotlight-label">Research / explainability</span>
+      <h3>Prompt Injection Visualizer</h3>
+      <p class="spotlight-lede">A browser-native educational platform that classifies prompt injection attacks using Transformers.js, Tokenizers.js, and D3.js — all running locally via WebGPU.</p>
+      <div class="spotlight-meta">
+        <span>Transformers.js</span>
+        <span>WebGPU</span>
+        <span>D3.js</span>
+        <span>ONNX Runtime</span>
+      </div>
+    </a>
+
+    <a class="spotlight-card" href="{{ '/projects/verialign/' | relative_url }}">
       <span class="spotlight-label">Proxy / verification</span>
       <h3>VeriAlign</h3>
       <p class="spotlight-lede">Turns LLM API traffic into verified responses with claim grounding, contradiction checks, and confidence metadata.</p>
@@ -120,18 +132,6 @@ permalink: /
         <span>CENSYS</span>
         <span>Threat intel</span>
         <span>Email posture</span>
-      </div>
-    </a>
-
-    <a class="spotlight-card" href="{{ '/prompt-injection-viz/' | relative_url }}">
-      <span class="spotlight-label">Research / explainability</span>
-      <h3>Prompt Injection Visualizer</h3>
-      <p class="spotlight-lede">A browser-native educational platform that classifies prompt injection attacks using Transformers.js, Tokenizers.js, and D3.js — all running locally via WebGPU.</p>
-      <div class="spotlight-meta">
-        <span>Transformers.js</span>
-        <span>WebGPU</span>
-        <span>D3.js</span>
-        <span>ONNX Runtime</span>
       </div>
     </a>
 
@@ -193,7 +193,14 @@ permalink: /
 </div>
 
 <section class="projects-grid">
-  {% for project in site.projects %}
+  {%- comment -%}
+    Prompt Injection Visualizer first, every other project in its existing
+    order (the collection is otherwise left untouched).
+  {%- endcomment -%}
+  {% assign pinned = site.projects | where: "slug", "prompt-injection-viz" %}
+  {% assign rest = site.projects | where_exp: "project", "project.slug != 'prompt-injection-viz'" %}
+  {% assign ordered_projects = pinned | concat: rest %}
+  {% for project in ordered_projects %}
   <div class="project-card">
     <h2>
       <a href="{{ project.url | relative_url }}">{{ project.title }}</a>
