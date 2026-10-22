@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gatekeeper — Reference Monitor (WebGPU Lab)</title>
+<meta name="description" content="An AI agent's tool calls flowing through a reference monitor, built from SENTRIX." />
+<style>
+  :root {
+    --bg-primary: #07080c;
+    --bg-secondary: #0c1017;
+    --bg-card: rgba(18, 22, 31, 0.74);
+    --gold: #d8b56c;
+    --green: #39ff88;
+    --amber: #ffbf5c;
+    --red: #ff5968;
+    --text-primary: #f2efe9;
+    --text-secondary: #b9b6ad;
+    --text-dim: #7a7780;
+    --border: rgba(255, 255, 255, 0.08);
+    --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--gold); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 56px; }
+  .crumbs { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 18px; }
+  .crumbs a { color: var(--text-dim); text-decoration: none; }
+  .crumbs a:hover { color: var(--gold); }
+  h1 { font-family: var(--font-serif); font-weight: 400; font-size: clamp(28px, 5vw, 44px); margin: 0 0 8px; line-height: 1.1; }
+  h1 em { font-style: italic; color: var(--gold); }
+  .lede { color: var(--text-secondary); max-width: 68ch; margin: 0 0 22px; }
+  .panel {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+    padding: 12px 14px; border-bottom: 1px solid var(--border);
+  }
+  button, .btn {
+    font: inherit; color: var(--text-primary); cursor: pointer;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 999px; padding: 6px 14px; font-size: 13px;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  button:hover, .btn:hover { border-color: rgba(216, 181, 108, .55); color: #fff; }
+  button:focus-visible, a:focus-visible, input:focus-visible, canvas:focus-visible, select:focus-visible {
+    outline: 2px solid var(--gold); outline-offset: 2px;
+  }
+  .btn-primary { background: var(--gold); color: #17130a; border-color: transparent; font-weight: 600; }
+  .btn-primary:hover { color: #17130a; background: #e6c47f; }
+  label.slider { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+  input[type="range"] { width: 110px; accent-color: var(--gold); }
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+  .filters label { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); cursor: pointer; }
+  .counters { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .counter {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 4px 12px; font-size: 12px; color: var(--text-secondary);
+    font-family: var(--font-mono);
+  }
+  .counter b { color: var(--text-primary); font-weight: 600; }
+  .glyph { width: 11px; height: 11px; display: inline-block; }
+  .g-allowed { color: var(--green); }
+  .g-flagged { color: var(--amber); }
+  .g-blocked { color: var(--red); }
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; }
+  .stage-wrap { position: relative; }
+  canvas { display: block; width: 100%; height: 460px; width: 100%; border-radius: 0 0 14px 14px; }
+  .gate-label {
+    position: absolute; top: 10px; transform: translateX(-50%);
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .18em;
+    color: var(--gold); text-transform: uppercase; pointer-events: none; white-space: nowrap;
+  }
+  .tooltip {
+    position: absolute; pointer-events: none; z-index: 5;
+    background: #0a0d13; border: 1px solid rgba(216,181,108,.45);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--text-primary);
+    max-width: 260px; box-shadow: 0 10px 30px rgba(0,0,0,.6); display: none;
+  }
+  .tooltip .t-title { font-family: var(--font-mono); color: var(--gold); margin-bottom: 3px; }
+  .tooltip .t-reason { color: var(--text-secondary); font-size: 11px; }
+  .side { display: flex; flex-direction: column; gap: 14px; }
+  .side .panel { padding: 14px; }
+  .side h2 { font-family: var(--font-serif); font-weight: 400; font-size: 16px; margin: 0 0 10px; color: var(--text-primary); }
+  .kv { display: grid; grid-template-columns: 92px 1fr; gap: 4px 10px; font-size: 12px; }
+  .kv dt { color: var(--text-dim); }
+  .kv dd { margin: 0; color: var(--text-secondary); font-family: var(--font-mono); word-break: break-word; }
+  .verdict { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; letter-spacing: .04em; }
+  .reason-box { margin-top: 10px; padding: 9px 10px; border-left: 2px solid var(--gold); background: rgba(216,181,108,.07); font-size: 12px; color: var(--text-secondary); border-radius: 0 6px 6px 0; }
+  .matches { margin-top: 8px; font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+  .calls { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; }
+  .calls li { margin-bottom: 6px; }
+  .calls button { width: 100%; text-align: left; border-radius: 8px; padding: 6px 9px; font-family: var(--font-mono); font-size: 11.5px; display: flex; align-items: center; gap: 8px; }
+  .calls button[aria-current="true"] { border-color: rgba(216,181,108,.6); background: rgba(216,181,108,.08); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-dim); padding: 10px 14px; border-top: 1px solid var(--border); }
+  .legend span b { color: var(--text-secondary); font-weight: 500; }
+  .note { margin-top: 14px; font-size: 11.5px; color: var(--text-dim); border-left: 2px solid var(--border); padding-left: 10px; }
+  .fallback-banner {
+    display: none; margin-bottom: 14px; padding: 10px 12px; font-size: 12.5px;
+    border: 1px solid rgba(255,191,92,.4); background: rgba(255,191,92,.08); color: #f4d9a8; border-radius: 10px;
+  }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  footer { margin-top: 34px; font-size: 12px; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 14px; }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+    canvas { height: 340px; }
+    .counters { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="crumbs"><a href="../">WebGPU Lab</a> / Gatekeeper</p>
+  <h1>Gatekeeper — every tool call meets the <em>reference monitor</em></h1>
+  <p class="lede">
+    An AI agent plans a sequence of tool calls. Before each one runs, a reference monitor checks it
+    against a deterministic capability policy: allowed, flagged, or blocked. This is the pattern from
+    <strong>SENTRIX</strong> — a dual-LLM reference monitor that enforces capability policy before every
+    tool call. The decisions below are computed live by the same policy and classifier rules ported
+    from that project.
+  </p>
+
+  <div class="fallback-banner" id="fallback-banner" role="status"></div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <button id="play" class="btn-primary" aria-pressed="true">Pause</button>
+      <button id="restart">Restart</button>
+      <label class="slider">Speed
+        <input id="speed" type="range" min="0.25" max="3" step="0.25" value="1" />
+        <span id="speed-val" style="font-family:var(--font-mono);width:3.2em">1.00x</span>
+      </label>
+      <div class="filters" role="group" aria-label="Filter by decision">
+        <label><input type="checkbox" data-filter="allowed" checked /> <span class="glyph g-allowed">&#9679;</span> allowed</label>
+        <label><input type="checkbox" data-filter="flagged" checked /> <span class="glyph g-flagged">&#9670;</span> flagged</label>
+        <label><input type="checkbox" data-filter="blocked" checked /> <span class="glyph g-blocked">&#9632;</span> blocked</label>
+      </div>
+      <div class="counters" aria-live="polite">
+        <span class="counter"><span class="glyph g-allowed">&#9679;</span> allowed <b id="c-allowed">0</b></span>
+        <span class="counter"><span class="glyph g-flagged">&#9670;</span> flagged <b id="c-flagged">0</b></span>
+        <span class="counter"><span class="glyph g-blocked">&#9632;</span> blocked <b id="c-blocked">0</b></span>
+      </div>
+    </div>
+
+    <div class="layout" style="padding:16px">
+      <div class="stage-wrap panel" style="overflow:hidden">
+        <canvas id="stage" tabindex="0" role="img"
+          aria-label="Tool calls travelling left to right through a reference monitor gate. Use the call list beside the canvas for a keyboard accessible version of the same information."></canvas>
+        <div class="gate-label" id="gate-label">reference monitor</div>
+        <div class="tooltip" id="tooltip" role="tooltip"></div>
+      </div>
+
+      <div class="side">
+        <div class="panel">
+          <h2>Selected call</h2>
+          <div id="detail">
+            <p style="font-size:12px;color:var(--text-dim);margin:0">Hover a particle or pick a call from the list below.</p>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Calls in this session</h2>
+          <ul class="calls" id="calls"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><b>&#9679; circle</b> allowed — executed</span>
+      <span><b>&#9670; diamond</b> flagged — allowed but suspicious</span>
+      <span><b>&#9632; square</b> blocked — refused before execution</span>
+      <span><b>shape + text</b> carry the decision, not colour alone</span>
+    </div>
+  </div>
+
+  <p class="note">
+    <strong>Data source.</strong> Tool names, arguments, payload wording, the capability policy and the
+    classifier patterns are taken from SENTRIX (<code>examples/demo.py</code>,
+    <code>src/sentrix/models/policy.py</code>, <code>src/sentrix/classifier/detector.py</code>,
+    <code>src/sentrix/harness/obfuscator.py</code>). The order in which the calls arrive, the lane
+    assignment and the short per-call notes are <em>illustrative sample data</em> composed for this
+    demo. Verdicts and reasons are computed live in your browser by the ported policy and classifier
+    code, not hard-coded. No secrets, tokens or live scan results are included.
+  </p>
+
+  <footer>
+    <a href="../">← WebGPU Lab</a> · built from <a href="https://github.com/Anandhasasidharan/SENTRIX" target="_blank" rel="noopener">SENTRIX</a>
+  </footer>
+</div>
+
+<p class="sr-only" id="live" aria-live="polite"></p>
+
+<!--INLINE:shared/gpu.js-->
+<!--INLINE:shared/data.js-->
+<script>
+(function () {
+  "use strict";
+
+  var COLORS = {
+    allowed: [57, 255, 136],
+    flagged: [255, 191, 92],
+    blocked: [255, 89, 104],
+    gate: [216, 181, 108],
+    lane: [120, 130, 150],
+    ghost: [90, 96, 110]
+  };
+  var SHAPE_FOR = { allowed: "disc", flagged: "diamond", blocked: "square" };
+  var LABEL_FOR = { allowed: "ALLOWED", flagged: "FLAGGED", blocked: "BLOCKED" };
+
+  var canvas = document.getElementById("stage");
+  var tooltip = document.getElementById("tooltip");
+  var gateLabel = document.getElementById("gate-label");
+  var live = document.getElementById("live");
+  var detail = document.getElementById("detail");
+  var callsEl = document.getElementById("calls");
+
+  var particles = [];
+  var fragments = [];
+  var counters = { allowed: 0, flagged: 0, blocked: 0 };
+  var filters = { allowed: true, flagged: true, blocked: true };
+  var speed = 1;
+  var nextCallIndex = 0;
+  var spawnTimer = 0;
+  var selectedId = null;
+  var hoverId = null;
+  var keyboardIndex = -1;
+  var laneCursor = 0;
+  var decisionCache = {};
+
+  var calls = LabData.SENTRIX.toolCalls;
+  calls.forEach(function (c) {
+    decisionCache[c.id] = LabData.SENTRIX.decide(c);
+  });
+
+  var stage = null;
+  var loop = null;
+  var reduced = WebGPULab.prefersReducedMotion();
+
+  /* ------------------------------------------------------------------ */
+  /* Scene helpers                                                       */
+  /* ------------------------------------------------------------------ */
+
+  function laneY(index) {
+    var lanes = 5;
+    var h = stage ? stage.height : 460;
+    var top = 70;
+    var bottom = h - 40;
+    var spacing = (bottom - top) / (lanes - 1);
+    return top + (index % lanes) * spacing;
+  }
+
+  function gateX() {
+    var w = stage ? stage.width : 800;
+    return Math.max(180, w * 0.66);
+  }
+
+  function reset() {
+    particles = [];
+    fragments = [];
+    counters = { allowed: 0, flagged: 0, blocked: 0 };
+    nextCallIndex = 0;
+    spawnTimer = 0;
+    laneCursor = 0;
+    selectedId = null;
+    keyboardIndex = -1;
+    updateCounters();
+    renderCalls();
+    renderDetail();
+  }
+
+  function spawn() {
+    if (nextCallIndex >= calls.length) {
+      nextCallIndex = 0;
+      laneCursor = 0;
+    }
+    var call = calls[nextCallIndex];
+    var decision = decisionCache[call.id];
+    nextCallIndex++;
+    if (!filters[decision.verdict]) {
+      // filtered out: skip this call entirely
+      return;
+    }
+    var p = {
+      id: call.id,
+      call: call,
+      decision: decision,
+      x: -24,
+      y: laneY(laneCursor),
+      vx: 88 + (laneCursor % 3) * 10,
+      vy: 0,
+      r: 8,
+      state: "travel",
+      alpha: 1,
+      wobble: laneCursor * 1.7
+    };
+    laneCursor++;
+    particles.push(p);
+  }
+
+  function shatter(p) {
+    var count = 12;
+    for (var i = 0; i < count; i++) {
+      var angle = (i / count) * Math.PI * 2 + p.wobble;
+      var speedV = 42 + (i % 4) * 16;
+      fragments.push({
+        x: p.x,
+        y: p.y,
+        vx: Math.cos(angle) * speedV,
+        vy: Math.sin(angle) * speedV,
+        life: 1,
+        size: 2.2 + (i % 3),
+        color: COLORS.blocked
+      });
+    }
+  }
+
+  function update(dt) {
+    spawnTimer -= dt;
+    if (spawnTimer <= 0 && particles.length < 14) {
+      spawn();
+      spawnTimer = 1.55;
+    }
+    var gx = gateX();
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var p = particles[i];
+      if (p.state === "travel") {
+        p.x += p.vx * dt * speed;
+        p.y += Math.sin(p.wobble + p.x * 0.02) * 0.35;
+        if (p.x >= gx && !p.judged) {
+          p.judged = true;
+          if (p.decision.verdict === "blocked") {
+            p.state = "broken";
+            counters.blocked++;
+            shatter(p);
+            updateCounters();
+            announce("Blocked: " + p.call.tool + ". " + p.decision.reason);
+          } else if (p.decision.verdict === "flagged") {
+            p.state = "flagged";
+            p.vx *= 0.42;
+            p.color = COLORS.flagged;
+            counters.flagged++;
+            updateCounters();
+            announce("Flagged: " + p.call.tool + ". " + p.decision.reason);
+          } else {
+            p.state = "passed";
+            counters.allowed++;
+            updateCounters();
+          }
+        }
+      } else if (p.state === "flagged") {
+        p.x += p.vx * dt * speed;
+        p.y += Math.sin(p.wobble + p.x * 0.05) * 1.1;
+        if (p.x > (stage ? stage.width : 800) + 40) particles.splice(i, 1);
+      } else if (p.state === "passed") {
+        p.x += p.vx * dt * speed;
+        if (p.x > (stage ? stage.width : 800) + 40) particles.splice(i, 1);
+      } else if (p.state === "broken") {
+        p.alpha -= dt * 2.6;
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+    }
+    for (var f = fragments.length - 1; f >= 0; f--) {
+      var fr = fragments[f];
+      fr.x += fr.vx * dt * speed;
+      fr.y += fr.vy * dt * speed;
+      fr.vy += 42 * dt;
+      fr.life -= dt * 0.9;
+      if (fr.life <= 0) fragments.splice(f, 1);
+    }
+  }
+
+  function buildScene() {
+    var prims = [];
+    var w = stage ? stage.width : 800;
+    var h = stage ? stage.height : 460;
+    var gx = gateX();
+
+    // flow lane
+    prims.push({
+      x: gx / 2, y: h / 2, w: gx, h: 1, rot: 0,
+      color: [COLORS.lane[0], COLORS.lane[1], COLORS.lane[2], 0.16],
+      shape: "segment"
+    });
+    prims.push({
+      x: (gx + w) / 2, y: h / 2, w: w - gx, h: 1, rot: 0,
+      color: [COLORS.lane[0], COLORS.lane[1], COLORS.lane[2], 0.08],
+      shape: "segment"
+    });
+
+    // the gate itself
+    prims.push({
+      x: gx, y: h / 2, w: 4, h: h - 40, rot: 0,
+      color: [COLORS.gate[0], COLORS.gate[1], COLORS.gate[2], 0.5],
+      shape: "square"
+    });
+    prims.push({
+      x: gx, y: h / 2, w: 62, h: 62, rot: 0,
+      color: [COLORS.gate[0], COLORS.gate[1], COLORS.gate[2], 0.22],
+      shape: "ring", extra: 0.06
+    });
+
+    // particles
+    particles.forEach(function (p) {
+      var c = p.state === "flagged" ? COLORS.flagged : COLORS[p.decision.verdict];
+      prims.push({
+        x: p.x, y: p.y, w: p.r * 2, h: p.r * 2, rot: p.decision.verdict === "blocked" ? p.wobble : 0,
+        color: [c[0], c[1], c[2], p.alpha],
+        shape: SHAPE_FOR[p.decision.verdict]
+      });
+    });
+
+    // fragments of a blocked call
+    fragments.forEach(function (fr) {
+      prims.push({
+        x: fr.x, y: fr.y, w: fr.size * 2, h: fr.size * 2, rot: 0,
+        color: [fr.color[0], fr.color[1], fr.color[2], Math.max(0, fr.life)],
+        shape: "square"
+      });
+    });
+
+    return prims;
+  }
+
+  function render() {
+    stage.beginFrame(loop ? loop.elapsed : 0);
+    stage.render(buildScene());
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* UI                                                                  */
+  /* ------------------------------------------------------------------ */
+
+  function updateCounters() {
+    document.getElementById("c-allowed").textContent = counters.allowed;
+    document.getElementById("c-flagged").textContent = counters.flagged;
+    document.getElementById("c-blocked").textContent = counters.blocked;
+  }
+
+  function announce(text) {
+    live.textContent = text;
+  }
+
+  function renderCalls() {
+    callsEl.innerHTML = "";
+    calls.forEach(function (call) {
+      var d = decisionCache[call.id];
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("aria-current", selectedId === call.id ? "true" : "false");
+      var glyph = document.createElement("span");
+      glyph.className = "glyph " + (d.verdict === "allowed" ? "g-allowed" : d.verdict === "flagged" ? "g-flagged" : "g-blocked");
+      glyph.textContent = d.verdict === "allowed" ? "●" : d.verdict === "flagged" ? "◆" : "■";
+      var name = document.createElement("span");
+      name.textContent = call.tool;
+      var tag = document.createElement("span");
+      tag.style.color = "var(--text-dim)";
+      tag.style.marginLeft = "auto";
+      tag.textContent = LABEL_FOR[d.verdict];
+      b.appendChild(glyph);
+      b.appendChild(name);
+      b.appendChild(tag);
+      b.addEventListener("click", function () {
+        select(call.id);
+      });
+      li.appendChild(b);
+      callsEl.appendChild(li);
+    });
+  }
+
+  function select(id) {
+    selectedId = id;
+    renderCalls();
+    renderDetail();
+    var call = calls.filter(function (c) { return c.id === id; })[0];
+    if (call) announce(LABEL_FOR[decisionCache[id].verdict] + ": " + call.tool + ". " + decisionCache[id].reason);
+  }
+
+  function renderDetail() {
+    if (!selectedId) {
+      detail.innerHTML = '<p style="font-size:12px;color:var(--text-dim);margin:0">Hover a particle or pick a call from the list below.</p>';
+      return;
+    }
+    var call = calls.filter(function (c) { return c.id === selectedId; })[0];
+    var d = decisionCache[selectedId];
+    var args = Object.keys(call.args).map(function (k) { return k + "=" + call.args[k]; }).join(", ");
+    var glyph = d.verdict === "allowed" ? "●" : d.verdict === "flagged" ? "◆" : "■";
+    var cls = d.verdict === "allowed" ? "g-allowed" : d.verdict === "flagged" ? "g-flagged" : "g-blocked";
+    var html = '<dl class="kv">';
+    html += "<dt>Tool</dt><dd>" + escapeHtml(call.tool) + "</dd>";
+    html += "<dt>Arguments</dt><dd>" + escapeHtml(args) + "</dd>";
+    html += "<dt>Provenance</dt><dd>" + escapeHtml(call.provenance) + "</dd>";
+    html += "<dt>Source</dt><dd>" + escapeHtml(call.source) + "</dd>";
+    html += "<dt>Decision</dt><dd><span class=\"verdict " + cls + "\"><span class=\"glyph " + cls + "\">" + glyph + "</span>" + LABEL_FOR[d.verdict] + "</span></dd>";
+    html += "<dt>Enforced by</dt><dd>" + escapeHtml(d.layer) + "</dd>";
+    html += "<dt>Classifier</dt><dd>" + d.classifierScore.toFixed(2) + " (threshold " + LabData.SENTRIX.classifierThreshold + ")</dd>";
+    html += "</dl>";
+    html += '<div class="reason-box">' + escapeHtml(d.reason) + "</div>";
+    if (d.classifierMatches && d.classifierMatches.length) {
+      html += '<div class="matches">matched: ' + d.classifierMatches.map(function (m) {
+        return escapeHtml(m.patternName) + " (" + m.severity + ")";
+      }).join(", ") + "</div>";
+    }
+    if (call.note) {
+      html += '<div class="matches" style="font-family:var(--font-sans);color:var(--text-secondary);margin-top:8px">' + escapeHtml(call.note) + "</div>";
+    }
+    detail.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Interaction                                                         */
+  /* ------------------------------------------------------------------ */
+
+  function pointerPos(event) {
+    var rect = canvas.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  }
+
+  function hitTest(x, y) {
+    var best = null;
+    var bestDist = Infinity;
+    particles.forEach(function (p) {
+      if (p.state === "broken") return;
+      var dx = p.x - x;
+      var dy = p.y - y;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 16 && d < bestDist) {
+        bestDist = d;
+        best = p;
+      }
+    });
+    return best;
+  }
+
+  canvas.addEventListener("mousemove", function (event) {
+    var pos = pointerPos(event);
+    var p = hitTest(pos.x, pos.y);
+    hoverId = p ? p.id : null;
+    if (p) {
+      var d = p.decision;
+      tooltip.style.display = "block";
+      tooltip.style.left = Math.min(pos.x + 14, canvas.clientWidth - 250) + "px";
+      tooltip.style.top = Math.max(6, pos.y - 10) + "px";
+      tooltip.innerHTML =
+        '<div class="t-title">' + escapeHtml(p.call.tool) + "</div>" +
+        '<div><span class="verdict ' + (d.verdict === "allowed" ? "g-allowed" : d.verdict === "flagged" ? "g-flagged" : "g-blocked") + '">' +
+        (d.verdict === "allowed" ? "●" : d.verdict === "flagged" ? "◆" : "■") + " " + LABEL_FOR[d.verdict] + "</span></div>" +
+        '<div class="t-reason">' + escapeHtml(d.reason) + "</div>";
+    } else {
+      tooltip.style.display = "none";
+    }
+  });
+
+  canvas.addEventListener("mouseleave", function () {
+    tooltip.style.display = "none";
+    hoverId = null;
+  });
+
+  canvas.addEventListener("click", function (event) {
+    var pos = pointerPos(event);
+    var p = hitTest(pos.x, pos.y);
+    if (p) select(p.id);
+  });
+
+  // keyboard: arrow through the calls in flight, Enter pins the focused one
+  canvas.addEventListener("keydown", function (event) {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      keyboardIndex = Math.min(keyboardIndex + 1, particles.length - 1);
+      focusParticle();
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      keyboardIndex = Math.max(keyboardIndex - 1, 0);
+      focusParticle();
+    } else if (event.key === "Enter" && keyboardIndex >= 0 && particles[keyboardIndex]) {
+      event.preventDefault();
+      select(particles[keyboardIndex].id);
+    }
+  });
+
+  function focusParticle() {
+    var p = particles[keyboardIndex];
+    if (!p) return;
+    announce(
+      p.call.tool + " - " + LABEL_FOR[p.decision.verdict] + ". " + p.decision.reason + ". Press Enter to pin."
+    );
+    tooltip.style.display = "block";
+    tooltip.style.left = Math.min(p.x + 14, canvas.clientWidth - 250) + "px";
+    tooltip.style.top = Math.max(6, p.y - 10) + "px";
+    tooltip.innerHTML =
+      '<div class="t-title">' + escapeHtml(p.call.tool) + "</div>" +
+      '<div class="t-reason">' + escapeHtml(p.decision.reason) + "</div>";
+  }
+
+  var playBtn = document.getElementById("play");
+  function setPlaying(playing) {
+    playBtn.textContent = playing ? "Pause" : "Play";
+    playBtn.setAttribute("aria-pressed", playing ? "true" : "false");
+  }
+  playBtn.addEventListener("click", function () {
+    setPlaying(!loop.isPaused());
+    loop.toggle();
+  });
+
+  document.getElementById("restart").addEventListener("click", function () {
+    reset();
+  });
+
+  var speedInput = document.getElementById("speed");
+  speedInput.addEventListener("input", function () {
+    speed = parseFloat(speedInput.value);
+    document.getElementById("speed-val").textContent = speed.toFixed(2) + "x";
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-filter]"), function (input) {
+    input.addEventListener("change", function () {
+      filters[input.getAttribute("data-filter")] = input.checked;
+    });
+  });
+
+  window.addEventListener("keydown", function (event) {
+    if (event.code === "Space" && event.target === document.body) {
+      event.preventDefault();
+      setPlaying(!loop.isPaused());
+      loop.toggle();
+    }
+  });
+
+  window.addEventListener("resize", function () {
+    stage.resize();
+    gateLabel.style.left = gateX() + "px";
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Boot                                                                */
+  /* ------------------------------------------------------------------ */
+
+  WebGPULab.createStage(canvas, {}).then(function (result) {
+    stage = result.stage;
+    var banner = document.getElementById("fallback-banner");
+    if (result.mode === "canvas2d") {
+      banner.style.display = "block";
+      banner.innerHTML =
+        "<strong>Canvas2D fallback.</strong> This demo needs WebGPU for the GPU-rendered version - try recent Chrome or Edge. " +
+        "The same scene is being drawn with the 2D fallback so the idea stays visible. (" + escapeHtml(result.error) + ")";
+    } else {
+      banner.style.display = "none";
+    }
+    gateLabel.style.left = gateX() + "px";
+    updateCounters();
+    renderCalls();
+    renderDetail();
+    // small hook so the verification script can render the very same scene
+    // offscreen on the GPU and read the pixels back (headless browsers do
+    // not composite a WebGPU canvas into screenshots).
+    window.__lab = {
+      stage: stage,
+      scene: function () { return buildScene(); }
+    };
+    loop = WebGPULab.createLoop({
+      reduced: reduced,
+      update: update,
+      render: render
+    });
+    loop.start();
+    setPlaying(!reduced);
+    if (reduced) {
+      announce("Motion is reduced. Press Play to start the simulation.");
+    }
+  });
+})();
+</script>
+</body>
+</html>
