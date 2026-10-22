@@ -115,6 +115,7 @@ exclude:
   - webgpu-lab/build.mjs
   - webgpu-lab/verify.mjs
   - webgpu-lab/README.md
+  - designer-tools-section.html
 
 include:
   - _pages
