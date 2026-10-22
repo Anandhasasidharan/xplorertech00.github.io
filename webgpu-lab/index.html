@@ -92,9 +92,14 @@
     <p style="margin-top:0;color:var(--text-secondary)">
       These are not mock-ups. The gatekeeper demo re-implements SENTRIX's capability policy
       (<code>AgentPolicy.check_tool</code>) and its injection classifier patterns, so each verdict and
-      each reason string is computed live in your browser. The delegation demo uses AgentIAM's real
-      narrowing rules from <code>scope_utils.py</code> and the real rejection message from
-      <code>attenuate.py</code>, over the delegation chain from the project's own demo seed.
+      each reason string is computed live in your browser. One caveat: the classifier is a simplified
+      port — it uses SENTRIX's pattern matching only and does not include the project's embedding
+      classifier, so it recognises known patterns rather than paraphrases.
+    </p>
+    <p style="color:var(--text-secondary)">
+      The delegation demo uses AgentIAM's real narrowing rules from <code>scope_utils.py</code> and the
+      real rejection message from <code>attenuate.py</code>, over the delegation chain from the
+      project's own demo seed.
     </p>
     <p class="small" style="margin-bottom:0">
       Tool calls, arguments and payload wording come from those repositories. Where a sequence had to be
@@ -106,7 +111,10 @@
   <h2>Browser support</h2>
   <div class="panel support">
     <p style="margin-top:0;color:var(--text-secondary)">
-      WebGPU needs a recent browser: Chrome/Edge 113+, Safari 18+, or Firefox with WebGPU enabled.
+      Recent Chrome or Edge works best: WebGPU is on by default there from version 113 (on Linux it
+      depends on your hardware and driver). Support in other browsers still varies — Safari turns it
+      on by default from version 26 on macOS 26 Tahoe or later, and Firefox has it behind a flag
+      except on Windows — so a fallback view is shown when WebGPU isn't available.
     </p>
     <ul>
       <li>With WebGPU: instanced-quad rendering on the GPU, drawn by a small shared renderer
