@@ -109,11 +109,16 @@ exclude:
   - prompt-injection-viz/README.md
   - prompt-injection-viz/.gitignore
   - prompt-injection-viz/.oxlintrc.json
+  - webgpu-lab/node_modules/
   - webgpu-lab/src/
   - webgpu-lab/shared/
   - webgpu-lab/docs/
+  - webgpu-lab/tools/
   - webgpu-lab/build.mjs
+  - webgpu-lab/capture.mjs
   - webgpu-lab/verify.mjs
+  - webgpu-lab/package.json
+  - webgpu-lab/package-lock.json
   - webgpu-lab/README.md
   - designer-tools-section.html
 

@@ -1,15 +1,15 @@
 ---
 layout: project
-title: WebGPU Lab
+title: Three.js Lab
 slug: webgpu-lab
 status: active
-description: "Two self-contained WebGPU demos that explain AI agent security to non-experts: a reference monitor that allows, flags or blocks tool calls, and a delegation tree where authority can only narrow."
+description: "Two self-contained Three.js demos that explain AI agent security to non-experts: a reference monitor that allows, flags or blocks tool calls, and a delegation tree where authority can only narrow."
 tech:
+  - Three.js
   - WebGPU
-  - WGSL
-  - Canvas2D fallback
+  - WebGL 2
   - Vanilla JavaScript
-  - HTML
+  - esbuild
 links:
   - text: Open the lab
     url: /xplorertech00.github.io/webgpu-lab/
@@ -22,26 +22,27 @@ demo_type: interactive
 
 ## Overview
 
-The WebGPU Lab is a pair of small, dependency-free browser demos that make two ideas from my own
-security projects visible to someone who does not work with agents.
+The Three.js Lab is a pair of small browser demos that make two ideas from my own security projects
+visible to someone who does not work with agents.
 
 **Gatekeeper** (from [SENTRIX](https://github.com/Anandhasasidharan/SENTRIX)) shows an agent's tool
-calls travelling toward a reference monitor. Each call is allowed, flagged or blocked, and blocked
-calls visibly break apart at the gate. The decisions are not scripted: the demo ports SENTRIX's
-capability policy (`AgentPolicy.check_tool`) and its injection-classifier patterns, so every verdict
-and reason string is computed in the browser.
+calls streaming along lanes into a reference monitor. Each call is allowed, flagged or blocked:
+allowed calls pass with a flash, flagged calls slow down and change shape, and blocked calls break
+apart at the gate. The decisions are not scripted: the demo ports SENTRIX's capability policy
+(`AgentPolicy.check_tool`) and its injection-classifier patterns, so every verdict and reason string
+is computed in the browser.
 
 **Delegation Tree** (from [AgentIAM](https://github.com/Anandhasasidharan/AGENT-IAM)) draws each
-agent's permission scope inside its parent's scope, shrinking at every hop. Pressing "Try to widen
-scope" attempts to grant a child more than the parent holds; the attempt is rejected with the exact
+agent's permission scope as a glowing shell nested inside its parent's, contracting at every hop.
+Pressing "Try to widen scope" sends a token to the parent boundary, where it is refused with the exact
 scope that was exceeded, using the project's real narrowing rules and rejection message.
 
 **What it demonstrates**
 
-- A shared renderer (`shared/gpu.js`) that draws an entire scene as instanced quads with an SDF
-  fragment shader, and falls back to Canvas2D when WebGPU is unavailable — the same scene, the same
-  data, so the idea stays visible on any browser.
-- Decisions carried by shape and text, never by colour alone.
+- One shared Three.js scene layer (`shared/scene.js`): a `WebGPURenderer` that uses WebGPU where the
+  browser has it and WebGL 2 otherwise, soft bloom on bright elements only, DOM labels with leader
+  lines, and guarded instanced particles.
+- Decisions and hierarchy carried by shape and text, never by colour alone.
 - Keyboard access, visible focus, and a reduced-motion mode that starts paused.
 
 **Why it exists**

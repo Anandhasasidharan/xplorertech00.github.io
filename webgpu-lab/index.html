@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WebGPU Lab — visual explanations of AI agent security</title>
-<meta name="description" content="Small, self-contained WebGPU demos that explain reference monitoring and delegation scope narrowing to non-experts." />
+<title>Three.js Lab — visual explanations of AI agent security</title>
+<meta name="description" content="Small, self-contained Three.js demos that explain reference monitoring and delegation scope narrowing to non-experts." />
 <style>
   :root {
     --bg-primary: #07080c;
@@ -43,6 +43,7 @@
     transition: border-color .2s ease, transform .2s ease;
   }
   .demo:hover { border-color: rgba(216, 181, 108, .5); transform: translateY(-2px); }
+  .demo:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .demo .tag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
   .demo h3 { font-family: var(--font-serif); font-weight: 400; font-size: 22px; margin: 8px 0 6px; }
   .demo h3 em { font-style: italic; color: var(--gold); }
@@ -53,36 +54,38 @@
   .support ul { color: var(--text-secondary); padding-left: 20px; margin: 8px 0 0; }
   .support li { margin-bottom: 6px; font-size: 14px; }
   .small { font-size: 12.5px; color: var(--text-dim); }
+  code { font-family: var(--font-mono); font-size: 12.5px; color: var(--text-secondary); }
+  kbd { font-family: var(--font-mono); font-size: 11.5px; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; color: var(--text-secondary); }
   footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-dim); display: flex; gap: 16px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <p class="crumbs"><a href="../">Home</a> / WebGPU Lab</p>
+  <p class="crumbs"><a href="../">Home</a> / Three.js Lab</p>
 
-  <h1>WebGPU <em>Lab</em></h1>
+  <h1>Three.js <em>Lab</em></h1>
   <p class="lede">
     Two small browser demos that explain how AI agents are kept honest, built from two of my own
-    projects. <strong>Gatekeeper</strong> shows an agent's tool calls flowing through a reference
+    projects. <strong>Gatekeeper</strong> shows an agent's tool calls streaming through a reference
     monitor that allows, flags or blocks each one before it runs. <strong>Delegation Tree</strong> shows
     a chain of agents where every hop may only narrow the authority it received — widening a scope is
-    refused before any token is issued. Everything renders with WebGPU when the browser supports it and
-    falls back to Canvas2D when it does not, so the idea is always visible.
+    refused before any token is issued. Both are built with <strong>Three.js and vanilla
+    JavaScript</strong>, rendering with WebGPU where the browser supports it and WebGL 2 otherwise.
   </p>
 
   <div class="demo-grid">
     <a class="demo" href="gatekeeper/">
       <span class="tag">From SENTRIX</span>
       <h3>Gatekeeper — <em>reference monitor</em></h3>
-      <p>Particles are tool calls travelling toward a policy gate: allowed calls pass, flagged calls slow
-        down and change shape, blocked calls break apart at the gate.</p>
+      <p>Tool calls fly along lanes into a portal: allowed calls pass with a flash, flagged calls slow
+        down and change shape, blocked calls break apart on the ring.</p>
       <span class="src">Open demo →</span>
     </a>
     <a class="demo" href="delegation-tree/">
       <span class="tag">From AgentIAM</span>
       <h3>Delegation Tree — <em>scope can only narrow</em></h3>
-      <p>Each agent's permission scope is drawn inside its parent's and shrinks at every hop; try to widen
-        it and the attempt is rejected with the scope that was exceeded.</p>
+      <p>Each agent's permission scope is a glowing shell nested inside its parent's, and it contracts
+        at every hop; try to widen it and the token stops at the boundary.</p>
       <span class="src">Open demo →</span>
     </a>
   </div>
@@ -108,29 +111,35 @@
     </p>
   </div>
 
-  <h2>Browser support</h2>
-  <div class="panel support">
+  <h2>Rendering and controls</h2>
+  <div class="panel">
     <p style="margin-top:0;color:var(--text-secondary)">
-      Recent Chrome or Edge works best: WebGPU is on by default there from version 113 (on Linux it
-      depends on your hardware and driver). Support in other browsers still varies — Safari turns it
-      on by default from version 26 on macOS 26 Tahoe or later, and Firefox has it behind a flag
-      except on Windows — so a fallback view is shown when WebGPU isn't available.
+      Both demos are Three.js scenes drawn by <code>WebGPURenderer</code>: WebGPU when the browser has it,
+      WebGL 2 when it does not. Each page is one self-contained HTML file — the Three.js modules are
+      bundled and inlined, so nothing is fetched at runtime.
     </p>
     <ul>
-      <li>With WebGPU: instanced-quad rendering on the GPU, drawn by a small shared renderer
-        (<code>shared/gpu.js</code>).</li>
-      <li>Without WebGPU: the same scene is drawn with a Canvas2D fallback, and a banner explains why.</li>
-      <li>With <code>prefers-reduced-motion</code> enabled, the simulation starts paused with a visible
-        Play button.</li>
+      <li>Drag to orbit, scroll or pinch to zoom, double-click or <strong>Reset view</strong> to recentre.</li>
+      <li><kbd>Space</kbd> plays or pauses. With <code>prefers-reduced-motion</code> the demos start
+        paused, with a visible Play button.</li>
+      <li><kbd>F</kbd> shows the frame rate and which backend is active; the Quality button turns bloom
+        and trails off, and the demos drop to Low quality by themselves if frames stay slow.</li>
+      <li>Add <code>?backend=webgl</code> to the URL to force the WebGL 2 backend.</li>
       <li>Every demo is keyboard accessible and never relies on colour alone to convey a decision.</li>
     </ul>
+    <p class="small" style="margin-bottom:0">
+      Chrome and Edge expose WebGPU by default from version 113 (on Linux it depends on hardware and
+      drivers). Other browsers vary — Safari enables it by default from version 26 on macOS 26 Tahoe or
+      later, and Firefox keeps it behind a flag outside Windows — so WebGL 2 is used when WebGPU is not
+      available.
+    </p>
   </div>
 
   <footer>
     <a href="../">← Back to the portfolio</a>
+    <a href="../prompt-injection-viz/">Prompt Injection Visualizer</a>
     <a href="https://github.com/Anandhasasidharan/SENTRIX" target="_blank" rel="noopener">SENTRIX source</a>
     <a href="https://github.com/Anandhasasidharan/AGENT-IAM" target="_blank" rel="noopener">AgentIAM source</a>
-    <a href="../prompt-injection-viz/">Prompt Injection Visualizer</a>
   </footer>
 </div>
 </body>
