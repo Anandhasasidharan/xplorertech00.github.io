@@ -1720,8 +1720,11 @@
   /* ------------------------------------------------------------------ */
 
   function showChip(nodeId, text, kind) {
+    // one chip at a time: the flow narrates a single hop at a time, and two
+    // chips on screen at once could overlap a neighbouring label
+    hideChips();
     var st = state[nodeId];
-    st.chip = { text: text, kind: kind || "info", until: elapsed + 2.6 };
+    st.chip = { text: text, kind: kind || "info", until: elapsed + 2.2 };
     var chipEl = document.getElementById("chip-" + nodeId);
     if (!chipEl) return;
     chipEl.textContent = text;
@@ -1730,6 +1733,7 @@
 
   function hideChips() {
     nodes.forEach(function (n) {
+      state[n.id].chip = null;
       var chipEl = document.getElementById("chip-" + n.id);
       if (chipEl) chipEl.className = "chip";
     });
