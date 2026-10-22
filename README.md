@@ -15,8 +15,8 @@ Built with **Jekyll + GitHub Pages**. Features an interactive editorial engine p
 
 - [Network Anomaly Risk Score](https://github.com/Anandhasasidharan/projects) — ML threat detection with explainable AI
 - [Community AI Audit Framework](https://github.com/Anandhasasidharan/community-ai-audit) — Multi-provider LLM security auditing
-- [ORYTH](https://github.com/Anandhasasidharan/oryth) — [project description]
-- [VulnGPT MCP](https://github.com/Anandhasasidharan/vulngpt-mcp) — [project description]
+- [ORYTH](https://github.com/Anandhasasidharan/oryth) — Self-hosted personal cyber risk dashboard: live Censys scans of your public IP, daily breach checks for your email accounts, and Grafana dashboards.
+- [VulnGPT MCP](https://github.com/Anandhasasidharan/vulngpt-mcp-server) — MCP server for AI-assisted code scanning: static analysis of Python code, OSV CVE lookups, secret detection, and MCP-specific flaw and tool-poisoning scans.
 
 ## Tech Stack
 
