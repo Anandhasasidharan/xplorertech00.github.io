@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Delegation Tree — scope can only narrow (WebGPU Lab)</title>
-<meta name="description" content="Agent delegation where each hop may narrow authority but never expand it, built from AgentIAM." />
+<title>Delegation Tree — scope can only narrow (Three.js Lab)</title>
+<meta name="description" content="Agent delegation where each hop may narrow authority but never expand it, built from AgentIAM with Three.js." />
 <style>
   :root {
     --bg-primary: #07080c;
@@ -41,7 +41,7 @@
   }
   .lede { color: var(--text-secondary); max-width: 68ch; margin: 0 0 22px; }
   .panel { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; }
-  .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border); }
   button, .btn {
     font: inherit; color: var(--text-primary); cursor: pointer; background: transparent;
     border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; font-size: 13px;
@@ -53,34 +53,54 @@
   }
   .btn-primary { background: var(--gold); color: #17130a; border-color: transparent; font-weight: 600; }
   .btn-primary:hover { color: #17130a; background: #e6c47f; }
+  .btn-primary.is-paused { background: transparent; color: var(--gold); border-color: rgba(216,181,108,.6); }
   .btn-danger { border-color: rgba(255, 89, 104, .45); color: #ffb3ba; }
   .btn-danger:hover { border-color: var(--red); color: #fff; background: rgba(255, 89, 104, .1); }
   .speed { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
   input[type="range"] { width: 108px; accent-color: var(--gold); }
   .speed-val { font-family: var(--font-mono); width: 3.2em; }
   .toolbar .spacer { margin-left: auto; }
+  .toolbar-meta { font-size: 12px; color: var(--text-dim); }
+  .toolbar-strong { color: var(--text-primary); }
+  kbd { font-family: var(--font-mono); font-size: 10.5px; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; padding: 16px; }
   .stage-wrap { position: relative; overflow: hidden; }
-  canvas { display: block; width: 100%; height: 560px; border-radius: 14px; }
-  .node-label {
-    position: absolute; transform: translate(-50%, -50%); pointer-events: none;
-    font-family: var(--font-mono); font-size: 10.5px; color: var(--text-primary);
-    text-shadow: 0 1px 6px #000, 0 0 10px rgba(0,0,0,.9); white-space: nowrap; text-align: center;
-    transition: color .2s ease;
+  canvas { display: block; width: 100%; height: 560px; border-radius: 14px; touch-action: none; cursor: grab; }
+  canvas.is-dragging { cursor: grabbing; }
+  canvas:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+  /* DOM labels + leader lines over the canvas */
+  .lab-labels, .lab-leaders { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+  .lab-leaders { width: 100%; height: 100%; overflow: visible; }
+  .lab-leader { stroke: rgba(216, 181, 108, .38); stroke-width: 1; }
+  .lab-label {
+    position: absolute; left: 0; top: 0; transform: translate3d(0,0,0) translate(-50%,-50%);
+    font-family: var(--font-mono); font-size: 10.5px; line-height: 1.25; color: var(--text-primary);
+    text-align: center; white-space: nowrap; text-shadow: 0 1px 6px #000, 0 0 12px rgba(0,0,0,.95);
+    transition: color .2s ease, opacity .2s ease;
   }
-  .node-label small { display: block; color: var(--text-secondary); font-size: 9.5px; letter-spacing: .04em; }
-  .node-label.is-dim { color: var(--text-dim); }
-  .node-label.is-dim small { color: var(--text-dim); }
-  .node-label.is-active { color: #fff; }
+  .lab-label small { display: block; color: var(--text-secondary); font-size: 9.5px; letter-spacing: .05em; }
+  .lab-label[data-tone="dim"] { color: var(--text-dim); }
+  .lab-label[data-tone="dim"] small { color: var(--text-dim); }
+  .lab-label[data-tone="active"] { color: #fff; }
+  .lab-hud { position: absolute; left: 10px; bottom: 10px; z-index: 5; pointer-events: none; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); }
+  .lab-fps, .lab-quality-note {
+    display: none; padding: 3px 8px; border-radius: 6px;
+    background: rgba(7,8,12,.72); border: 1px solid var(--border);
+  }
+  .lab-fps[data-on="1"], .lab-quality-note[data-on="1"] { display: block; }
+  .lab-quality-note { margin-bottom: 6px; color: #f4d9a8; border-color: rgba(255,191,92,.35); }
+
   .chip {
-    position: absolute; transform: translate(-50%, -50%); pointer-events: none;
+    position: absolute; left: 0; top: 0; z-index: 4; transform: translate3d(0,0,0) translate(-50%,0);
     font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em;
     color: #0b0d12; background: var(--gold); border-radius: 999px; padding: 4px 10px;
-    box-shadow: 0 4px 18px rgba(0,0,0,.55); opacity: 0; transition: opacity .25s ease;
-    white-space: nowrap;
+    box-shadow: 0 4px 18px rgba(0,0,0,.55); opacity: 0; max-width: min(92%, 420px);
+    white-space: normal; text-align: center; line-height: 1.4;
+    transition: opacity .25s ease; pointer-events: none;
   }
-  .chip.is-shown { opacity: 1; }
-  .chip.is-rejected { background: var(--red); color: #1a0a0d; }
+  .chip[data-on="1"] { opacity: 1; }
+  .chip[data-kind="rejected"] { background: var(--red); color: #1a0a0d; }
   .tooltip {
     position: absolute; pointer-events: none; z-index: 6;
     background: #0a0d13; border: 1px solid rgba(216,181,108,.45);
@@ -89,7 +109,7 @@
   }
   .tooltip .t-title { font-family: var(--font-mono); color: var(--gold); margin-bottom: 4px; }
   .tooltip .t-line { color: var(--text-secondary); font-size: 11px; font-family: var(--font-mono); }
-  .side { display: flex; flex-direction: column; gap: 14px; }
+  .side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
   .side .panel { padding: 14px; }
   .side h2 { font-family: var(--font-serif); font-weight: 400; font-size: 16px; margin: 0 0 10px; }
   .kv { display: grid; grid-template-columns: 84px 1fr; gap: 4px 10px; font-size: 12px; }
@@ -98,6 +118,7 @@
   .scopes { list-style: none; margin: 8px 0 0; padding: 0; font-family: var(--font-mono); font-size: 12px; }
   .scopes li { color: var(--text-primary); padding: 3px 0; border-bottom: 1px dashed rgba(255,255,255,.06); }
   .scopes li em { color: var(--text-dim); font-style: normal; }
+  .scopes li.scope-note { color: var(--text-dim); }
   .verdict { margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 12px; display: none; }
   .verdict.show { display: block; }
   .verdict.rejected { background: rgba(255,89,104,.1); border: 1px solid rgba(255,89,104,.45); color: #ffc3c8; }
@@ -108,55 +129,70 @@
   .nodes li { margin-bottom: 6px; }
   .nodes button { width: 100%; text-align: left; border-radius: 8px; padding: 7px 9px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
   .nodes button[aria-current="true"] { border-color: rgba(216,181,108,.6); background: rgba(216,181,108,.08); }
+  .node-role { margin-left: auto; font-size: 11px; color: var(--text-dim); }
   .shape-glyph { width: 11px; height: 11px; flex: none; }
   .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11px; color: var(--text-dim); padding: 10px 14px; border-top: 1px solid var(--border); }
   .legend span b { color: var(--text-secondary); font-weight: 500; }
   .note { margin-top: 14px; font-size: 11.5px; color: var(--text-dim); border-left: 2px solid var(--border); padding-left: 10px; }
-  .fallback-banner {
-    display: none; margin-bottom: 14px; padding: 10px 12px; font-size: 12.5px;
-    border: 1px solid rgba(255,191,92,.4); background: rgba(255,191,92,.08); color: #f4d9a8; border-radius: 10px;
-  }
+  .no-gpu { display: none; }
+  .no-gpu[data-on="1"] { display: block; margin-bottom: 14px; padding: 14px; border: 1px solid rgba(255,191,92,.4); background: rgba(255,191,92,.08); color: #f4d9a8; border-radius: 12px; }
+  .no-gpu img { display: block; width: 100%; height: auto; margin-top: 12px; border-radius: 8px; border: 1px solid var(--border); }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
   footer { margin-top: 34px; font-size: 12px; color: var(--text-dim); border-top: 1px solid var(--border); padding-top: 14px; }
   @media (max-width: 940px) {
     .layout { grid-template-columns: minmax(0, 1fr); }
     canvas { height: 430px; }
   }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <p class="crumbs"><a href="../">WebGPU Lab</a> / Delegation Tree</p>
+  <p class="crumbs"><a href="../">Three.js Lab</a> / Delegation Tree</p>
   <h1>Delegation Tree — authority can only <em>narrow</em></h1>
   <p class="rule">Delegation may narrow authority, never expand it.</p>
   <p class="lede">
     A human operator hands a scope to a manager agent, the manager hands a smaller scope to a worker,
-    and the worker hands a single-file scope to a tool. Each child scope is drawn inside its parent's
-    scope and shrinks at every hop. Try to widen a scope and the delegation is refused before any
-    token is issued. This is the attenuation guarantee from <strong>AgentIAM</strong> — invocation-bound
-    capability tokens where the delegation chain <em>is</em> the audit trail.
+    and the worker hands a single-file scope to a tool. Each scope is a shell drawn inside its parent's
+    shell, and it contracts at every hop. Try to widen a scope and the token stops at the parent boundary:
+    the delegation is refused before any token is issued. This is the attenuation guarantee from
+    <strong>AgentIAM</strong> — invocation-bound capability tokens where the delegation chain <em>is</em>
+    the audit trail.
   </p>
 
-  <div class="fallback-banner" id="fallback-banner" role="status"></div>
+  <div class="no-gpu" id="no-gpu" role="status">
+    <strong>This browser has neither WebGPU nor WebGL 2.</strong>
+    <span class="ng-reason">A still of the demo is shown below.</span>
+    <!--IMAGE:docs/delegation-tree-webgl.jpg-->
+  </div>
 
   <div class="panel">
     <div class="toolbar">
       <button id="play" class="btn-primary" aria-pressed="true">Pause</button>
       <button id="replay">Replay delegation</button>
       <label class="speed">Speed
-        <input id="speed" type="range" min="0.25" max="3" step="0.25" value="1" />
+        <input id="speed" type="range" min="0.25" max="3" step="0.25" value="1" aria-label="Simulation speed" />
         <span class="speed-val" id="speed-val">1.00x</span>
       </label>
       <button id="widen" class="btn-danger">Try to widen scope</button>
       <button id="narrow">Try a valid narrowing</button>
+      <button id="quality">Quality: High</button>
+      <button id="reset">Reset view</button>
       <span class="spacer"></span>
-      <span style="font-size:12px;color:var(--text-dim)">Selected: <span id="selected-name" style="color:var(--text-primary)">Worker Agent</span></span>
+      <span class="toolbar-meta">Selected: <span id="selected-name" class="toolbar-strong">Worker Agent</span></span>
     </div>
 
     <div class="layout">
-      <div class="stage-wrap panel" style="padding:0;overflow:hidden">
+      <div class="stage-wrap panel">
         <canvas id="stage" tabindex="0" role="img"
-          aria-label="Concentric scope diagram: each agent's permission scope is drawn inside its parent's scope and shrinks at every delegation hop. A list of agents with their scopes is provided beside the canvas."></canvas>
+          aria-label="Three-dimensional concentric scope diagram: each agent's permission scope is a shell inside its parent's shell and contracts at every delegation hop. A text list of agents with their scopes is provided beside the canvas."></canvas>
+        <div class="chip" id="chip-n-alice" data-on="0"></div>
+        <div class="chip" id="chip-n-manager" data-on="0"></div>
+        <div class="chip" id="chip-n-worker" data-on="0"></div>
+        <div class="chip" id="chip-n-tool" data-on="0"></div>
+        <div class="chip" id="chip-n-tool-temp" data-on="0"></div>
         <div class="tooltip" id="tooltip" role="tooltip"></div>
       </div>
 
@@ -177,11 +213,11 @@
     </div>
 
     <div class="legend">
-      <span><b>square</b> human</span>
-      <span><b>diamond</b> agent</span>
-      <span><b>disc</b> tool</span>
-      <span><b>dashed rim</b> temporary / conditional</span>
-      <span><b>size</b> = scope, <b>colour</b> = depth in the chain</span>
+      <span><b>cube</b> human</span>
+      <span><b>octahedron</b> agent</span>
+      <span><b>sphere</b> tool</span>
+      <span><b>dashed ring</b> temporary / conditional</span>
+      <span><b>shell size</b> = scope, <b>colour</b> = depth in the chain</span>
       <span>shape and labels carry the meaning, not colour alone</span>
     </div>
   </div>
@@ -195,1137 +231,19 @@
     demo domain <code>iam.local</code>; the two button attempts are <em>illustrative sample data</em>
     built from those rules, not real token minting. No secrets or live credentials are included.
   </p>
+  <p class="note">
+    <strong>Rendering.</strong> Three.js with vanilla JavaScript; WebGPU where the browser supports it,
+    WebGL 2 otherwise. Drag to orbit, scroll or pinch to zoom, <kbd>Space</kbd> to play or pause,
+    arrow keys to move the selection, double-click to reset the view, <kbd>F</kbd> for fps and backend.
+  </p>
 
   <footer>
-    <a href="../">← WebGPU Lab</a> · built from <a href="https://github.com/Anandhasasidharan/AGENT-IAM" target="_blank" rel="noopener">AgentIAM</a>
+    <a href="../">← Three.js Lab</a> · built from <a href="https://github.com/Anandhasasidharan/AGENT-IAM" target="_blank" rel="noopener">AgentIAM</a>
   </footer>
 </div>
 
 <p class="sr-only" id="live" aria-live="polite"></p>
 
-<!--INLINE:shared/gpu.js-->
-<!--INLINE:shared/data.js-->
-<script>
-(function () {
-  "use strict";
-
-  var A = LabData.AGENTIAM;
-  var chain = A.chain;
-  var nodes = chain.nodes;
-
-  /* ------------------------------------------------------------------ */
-  /* Palette - see webgpu-lab/docs/design-notes.md                        */
-  /* ------------------------------------------------------------------ */
-
-  var PALETTE = {
-    "n-alice": { fill: [216, 181, 108], rim: [232, 200, 140] },        /* warm gold  */
-    "n-manager": { fill: [226, 158, 74], rim: [240, 186, 110] },       /* amber      */
-    "n-worker": { fill: [66, 166, 156], rim: [104, 196, 186] },        /* teal       */
-    "n-tool": { fill: [82, 133, 199], rim: [124, 172, 232] },          /* cool blue  */
-    "n-tool-temp": { fill: [82, 133, 199], rim: [124, 172, 232] }      /* cool blue, dashed rim */
-  };
-  var NEUTRAL = [150, 146, 136];
-  var RED = [255, 89, 104];
-  var GREEN = [57, 255, 136];
-  var GOLD = [216, 181, 108];
-
-  // node type -> marker shape (never colour alone)
-  var SHAPE_FOR = {
-    "n-alice": "square",
-    "n-manager": "diamond",
-    "n-worker": "diamond",
-    "n-tool": "disc",
-    "n-tool-temp": "disc"
-  };
-  var TYPE_LABEL = {
-    "n-alice": "human",
-    "n-manager": "agent",
-    "n-worker": "agent",
-    "n-tool": "tool",
-    "n-tool-temp": "tool"
-  };
-  var TYPE_LONG = {
-    "n-alice": "human operator",
-    "n-manager": "agent",
-    "n-worker": "agent",
-    "n-tool": "tool",
-    "n-tool-temp": "tool (temporary)"
-  };
-
-  /* ------------------------------------------------------------------ */
-  /* Geometry - unit space, then fitted to the canvas                     */
-  /* ------------------------------------------------------------------ */
-
-  // Each hop shrinks the scope radius. ratio = child radius / parent radius,
-  // place = how far off the parent's centre the child sits (as a fraction of
-  // the gap that is left, so the child always stays inside its parent).
-  var GEOM = {
-    "n-manager": { ratio: 0.62, place: 0.82, dir: [0.12, 0.99] },
-    "n-worker": { ratio: 0.62, place: 0.86, dir: [0.30, 0.95] },
-    "n-tool": { ratio: 0.60, place: 0.92, dir: [0.88, 0.47] },
-    "n-tool-temp": { ratio: 0.50, place: 0.92, dir: [-0.88, 0.47] }
-  };
-  // how far towards the chain's centroid the figure is centred
-  var FOCUS = 0.25;
-
-  var canvas = document.getElementById("stage");
-  var tooltip = document.getElementById("tooltip");
-  var live = document.getElementById("live");
-  var kvEl = document.getElementById("kv");
-  var scopesEl = document.getElementById("scopes");
-  var verdictEl = document.getElementById("verdict");
-  var nodesEl = document.getElementById("nodes");
-  var selectedName = document.getElementById("selected-name");
-
-  var selectedId = "n-worker";
-  var hoverId = null;
-  var stage = null;
-  var loop = null;
-  var reduced = WebGPULab.prefersReducedMotion();
-  var speed = 1;
-  var playing = false;
-
-  // per-node animation state
-  var state = {};
-  nodes.forEach(function (n) {
-    state[n.id] = {
-      contract: 0,      // 0 = not yet delegated, 1 = fully narrowed
-      flash: 0,         // rejection flash
-      pop: 0,           // issued token pop-in
-      chip: null,       // { text, kind, until }
-      shock: null       // { x, y, r, alpha }
-    };
-  });
-
-  var tokens = [];       // travelling capability tokens
-  var flows = [];        // scheduled delegation paths
-  var flowTimer = 0;
-  var elapsed = 0;
-
-  function nodeById(id) {
-    for (var i = 0; i < nodes.length; i++) if (nodes[i].id === id) return nodes[i];
-    return null;
-  }
-
-  function unitLayout() {
-    var unit = {};
-    unit["n-alice"] = { x: 0, y: 0, r: 1 };
-    var order = ["n-manager", "n-worker", "n-tool", "n-tool-temp"];
-    order.forEach(function (id) {
-      var n = nodeById(id);
-      var parent = unit[n.parent];
-      var g = GEOM[id];
-      var r = parent.r * g.ratio;
-      var dir = g.dir;
-      var len = Math.sqrt(dir[0] * dir[0] + dir[1] * dir[1]);
-      var dist = (parent.r - r) * g.place;
-      unit[id] = {
-        x: parent.x + (dir[0] / len) * dist,
-        y: parent.y + (dir[1] / len) * dist,
-        r: r
-      };
-    });
-    return unit;
-  }
-
-  /* Fit the whole figure inside the canvas with a margin, and centre it. */
-  function computeLayout() {
-    var W = stage ? stage.width : 800;
-    var H = stage ? stage.height : 560;
-    var unit = unitLayout();
-
-    // bounding circle of every scope: the outermost ring contains the rest
-    var maxR = 0;
-    nodes.forEach(function (n) {
-      var u = unit[n.id];
-      var d = Math.sqrt(u.x * u.x + u.y * u.y) + u.r;
-      if (d > maxR) maxR = d;
-    });
-
-    var margin = 26;
-
-    // Focus point: part-way from the outermost scope towards the centroid
-    // of the chain, so the figure reads as a cascade instead of a lopsided
-    // circle. The scale is then chosen so that the outermost ring - which
-    // contains every other ring - still fits whole inside the canvas.
-    var fx = 0, fy = 0, count = 0;
-    nodes.forEach(function (n) {
-      fx += unit[n.id].x;
-      fy += unit[n.id].y;
-      count++;
-    });
-    fx = (fx / count) * FOCUS;
-    fy = (fy / count) * FOCUS;
-
-    var boundX = 0, boundY = 0, boundR = 0;
-    nodes.forEach(function (n) {
-      var u = unit[n.id];
-      var d = Math.sqrt(u.x * u.x + u.y * u.y) + u.r;
-      if (d > boundR) {
-        boundR = d;
-        boundX = u.x;
-        boundY = u.y;
-      }
-    });
-
-    // the outermost ring must stay inside the canvas on both axes
-    var offX = Math.abs(boundX - fx) + boundR;
-    var offY = Math.abs(boundY - fy) + boundR;
-    var scale = Math.min(
-      (W - margin * 2) / (offX * 2),
-      (H - margin * 2) / (offY * 2)
-    );
-    if (!isFinite(scale) || scale <= 0) scale = 1;
-
-    var layout = {};
-    nodes.forEach(function (n) {
-      var u = unit[n.id];
-      layout[n.id] = {
-        x: W / 2 + (u.x - fx) * scale,
-        y: H / 2 + (u.y - fy) * scale,
-        r: u.r * scale,
-        unit: u
-      };
-    });
-    layout.scale = scale;
-    layout.unit = unit;
-    return layout;
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Labels - outside the rings, on leader lines, collision avoided       */
-  /* ------------------------------------------------------------------ */
-
-  var LABEL_OFFSET = {
-    "n-alice": [0, -1],
-    "n-manager": [-1, -0.72],
-    "n-worker": [-1, 0.42],
-    "n-tool": [0.95, 0.62],
-    "n-tool-temp": [-0.95, 0.72]
-  };
-
-  function labelBoxes(layout) {
-    var boxes = [];
-    nodes.forEach(function (n) {
-      var L = layout[n.id];
-      var off = LABEL_OFFSET[n.id] || [0, -1];
-      var el = labelEl(n.id);
-      var w = el.offsetWidth || 92;
-      var h = el.offsetHeight || 24;
-      var dist = L.r + 16 + h / 2;
-      var box = {
-        id: n.id,
-        el: el,
-        w: w,
-        h: h,
-        x: L.x + off[0] * dist,
-        y: L.y + off[1] * dist,
-        ax: L.x,
-        ay: L.y
-      };
-      boxes.push(box);
-    });
-    return boxes;
-  }
-
-  function overlaps(a, b) {
-    return (
-      Math.abs(a.x - b.x) < (a.w + b.w) / 2 + 6 &&
-      Math.abs(a.y - b.y) < (a.h + b.h) / 2 + 4
-    );
-  }
-
-  function placeLabels(layout) {
-    var boxes = labelBoxes(layout);
-    // deepest nodes first - they have the least room
-    var ordered = boxes.slice().sort(function (a, b) {
-      return layout.unit[b.id].r - layout.unit[a.id].r;
-    });
-    var placed = [];
-    ordered.forEach(function (box) {
-      var tries = 0;
-      while (tries < 14) {
-        var clash = false;
-        for (var i = 0; i < placed.length; i++) {
-          if (overlaps(box, placed[i])) { clash = true; break; }
-        }
-        if (!clash) break;
-        // push further out along the same direction
-        var dx = box.x - box.ax;
-        var dy = box.y - box.ay;
-        var len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
-        box.x += (dx / len) * 12;
-        box.y += (dy / len) * 12;
-        tries++;
-      }
-      placed.push(box);
-    });
-
-    // keep every label inside the canvas, then re-check for overlaps
-    // (clamping can create new collisions) and push once more if needed
-    var W = stage ? stage.width : 800;
-    var H = stage ? stage.height : 560;
-    function clamp(box) {
-      box.x = Math.max(box.w / 2 + 4, Math.min(W - box.w / 2 - 4, box.x));
-      box.y = Math.max(box.h / 2 + 4, Math.min(H - box.h / 2 - 4, box.y));
-    }
-    placed.forEach(clamp);
-    for (var pass = 0; pass < 3; pass++) {
-      var moved = false;
-      for (var i = 0; i < placed.length; i++) {
-        for (var j = i + 1; j < placed.length; j++) {
-          var a = placed[i], b = placed[j];
-          if (!overlaps(a, b)) continue;
-          moved = true;
-          var dx = b.x - a.x;
-          var dy = b.y - a.y;
-          if (dx === 0 && dy === 0) dy = 1;
-          var push = 6;
-          a.x -= (dx / Math.max(1, Math.abs(dx) + Math.abs(dy))) * push;
-          a.y -= (dy / Math.max(1, Math.abs(dx) + Math.abs(dy))) * push;
-          b.x += (dx / Math.max(1, Math.abs(dx) + Math.abs(dy))) * push;
-          b.y += (dy / Math.max(1, Math.abs(dx) + Math.abs(dy))) * push;
-          clamp(a);
-          clamp(b);
-        }
-      }
-      if (!moved) break;
-    }
-    placed.forEach(function (box) {
-      box.el.style.left = box.x + "px";
-      box.el.style.top = box.y + "px";
-      box.el.dataset.anchorX = box.ax;
-      box.el.dataset.anchorY = box.ay;
-      labelPositions[box.id] = { x: box.x, y: box.y, w: box.w, h: box.h };
-    });
-    return placed;
-  }
-
-  function labelEl(id) {
-    var el = document.querySelector('.node-label[data-node="' + id + '"]');
-    return el;
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Chips (the real attenuation diff)                                    */
-  /* ------------------------------------------------------------------ */
-
-  function showChip(nodeId, text, kind) {
-    // one chip at a time: the flow narrates a single hop at a time, and two
-    // chips on screen at once could overlap a neighbouring label
-    hideChips();
-    var st = state[nodeId];
-    st.chip = { text: text, kind: kind || "info", until: elapsed + 2.2 };
-    var chipEl = document.getElementById("chip-" + nodeId);
-    if (!chipEl) return;
-    chipEl.textContent = text;
-    chipEl.className = "chip is-shown" + (kind === "rejected" ? " is-rejected" : "");
-  }
-
-  function hideChips() {
-    nodes.forEach(function (n) {
-      state[n.id].chip = null;
-      var chipEl = document.getElementById("chip-" + n.id);
-      if (chipEl) chipEl.className = "chip";
-    });
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Token flow                                                           */
-  /* ------------------------------------------------------------------ */
-
-  function chainTo(id) {
-    var path = [];
-    var cur = nodeById(id);
-    while (cur) {
-      path.unshift(cur.id);
-      cur = cur.parent ? nodeById(cur.parent) : null;
-    }
-    return path;
-  }
-
-  function startFlows() {
-    tokens = [];
-    flows = [];
-    nodes.forEach(function (n) { state[n.id].contract = 0; state[n.id].pop = 0; });
-    var isParent = {};
-    nodes.forEach(function (n) { if (n.parent) isParent[n.parent] = true; });
-    var leaves = nodes.filter(function (n) { return !isParent[n.id]; });
-    leaves.forEach(function (leaf, i) {
-      flows.push({ path: chainTo(leaf.id), seg: 0, t: 0, delay: i * 0.35 });
-    });
-    flowTimer = 0;
-  }
-
-  function spawnToken(path, fromIndex) {
-    var from = path[fromIndex];
-    var to = path[fromIndex + 1];
-    tokens.push({
-      path: path,
-      seg: fromIndex,
-      t: 0,
-      dur: 1.15,
-      trail: [],
-      arrived: false
-    });
-    return to;
-  }
-
-  var idleParticles = [];
-  var idleTimer = 0;
-
-  function updateIdle(dt) {
-    idleTimer -= dt;
-    if (idleTimer <= 0 && tokens.length === 0 && playing) {
-      idleTimer = 2.6;
-      var L = currentLayout;
-      if (L && L["n-worker"]) {
-        var a = Math.random() * Math.PI * 2;
-        var r = L["n-worker"].r * 0.9;
-        idleParticles.push({
-          x: L["n-worker"].x + Math.cos(a) * r,
-          y: L["n-worker"].y + Math.sin(a) * r,
-          phase: Math.random() * 6.28,
-          life: 1,
-          speed: 6 + Math.random() * 5
-        });
-      }
-    }
-    for (var i = idleParticles.length - 1; i >= 0; i--) {
-      var p = idleParticles[i];
-      p.phase += dt * 0.5;
-      p.x += Math.cos(p.phase) * p.speed * dt;
-      p.y += Math.sin(p.phase * 0.8) * p.speed * dt;
-      p.life -= dt * 0.16;
-      if (p.life <= 0) idleParticles.splice(i, 1);
-    }
-  }
-
-  function updateTokens(dt) {
-    // schedule new flows
-    flowTimer -= dt;
-    if (flowTimer <= 0 && flows.length) {
-      var f = flows.shift();
-      if (f.delay > 0) {
-        f.delay -= 0.35;
-        flows.unshift(f);
-        flowTimer = 0.35;
-      } else {
-        spawnToken(f.path, 0);
-        flowTimer = 0.55;
-      }
-    }
-
-    for (var i = tokens.length - 1; i >= 0; i--) {
-      var tk = tokens[i];
-      tk.t += dt / tk.dur;
-      if (tk.t >= 1) {
-        var arrivedAt = tk.path[tk.seg + 1];
-        if (arrivedAt) {
-          // the scope contracts by the real attenuation, and the real diff is shown
-          var parentId = tk.path[tk.seg];
-          var parent = nodeById(parentId);
-          var child = nodeById(arrivedAt);
-          var diff = A.caveatDiff(parent.caveats, child.caveats);
-          state[arrivedAt].contract = 0;
-          state[arrivedAt].contractTarget = 1;
-          showChip(arrivedAt, diff, "info");
-          if (tk.seg + 2 < tk.path.length) {
-            tk.seg++;
-            tk.t = 0;
-          } else {
-            tokens.splice(i, 1);
-            continue;
-          }
-        } else {
-          tokens.splice(i, 1);
-          continue;
-        }
-      }
-      // short trail
-      var pos = tokenPosition(tk);
-      if (pos) {
-        tk.trail.unshift(pos);
-        if (tk.trail.length > 7) tk.trail.pop();
-      }
-    }
-
-    // contraction easing
-    nodes.forEach(function (n) {
-      var st = state[n.id];
-      if (st.contractTarget && st.contract < 1) {
-        st.contract = Math.min(1, st.contract + dt / 0.6);
-        if (st.contract >= 1) st.contractTarget = 0;
-      }
-      if (st.flash > 0) st.flash = Math.max(0, st.flash - dt * 1.8);
-      if (st.pop > 0) st.pop = Math.max(0, st.pop - dt * 1.4);
-      if (st.chip && st.chip.until < elapsed) {
-        st.chip = null;
-        var chipEl = document.getElementById("chip-" + n.id);
-        if (chipEl) chipEl.className = "chip";
-      }
-      if (st.shock) {
-        st.shock.r += dt * 260;
-        st.shock.alpha -= dt * 1.6;
-        if (st.shock.alpha <= 0) st.shock = null;
-      }
-    });
-  }
-
-  function tokenPosition(tk) {
-    var layout = currentLayout;
-    if (!layout) return null;
-    var from = layout[tk.path[tk.seg]];
-    var to = layout[tk.path[tk.seg + 1]];
-    if (!from || !to) return null;
-    var t = Math.min(1, Math.max(0, tk.t));
-    var e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // ease-in-out
-    return {
-      x: from.x + (to.x - from.x) * e,
-      y: from.y + (to.y - from.y) * e
-    };
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Scene                                                                */
-  /* ------------------------------------------------------------------ */
-
-  var currentLayout = null;
-
-  function ancestorsOf(id) {
-    var set = {};
-    var cur = nodeById(id);
-    while (cur) {
-      set[cur.id] = true;
-      cur = cur.parent ? nodeById(cur.parent) : null;
-    }
-    return set;
-  }
-
-  function descendantsOf(id) {
-    var set = {};
-    nodes.forEach(function (n) {
-      var cur = n;
-      while (cur && cur.parent) {
-        if (cur.parent === id) { set[n.id] = true; break; }
-        cur = nodeById(cur.parent);
-      }
-    });
-    return set;
-  }
-
-  function relatedTo(id) {
-    var set = ancestorsOf(id);
-    var desc = descendantsOf(id);
-    for (var key in desc) if (Object.prototype.hasOwnProperty.call(desc, key)) set[key] = true;
-    return set;
-  }
-
-  function buildScene() {
-    var prims = [];
-    var layout = currentLayout || (currentLayout = computeLayout());
-    var W = stage ? stage.width : 800;
-    var H = stage ? stage.height : 560;
-    var related = relatedTo(selectedId);
-    var breathe = 1 + (playing ? Math.sin(elapsed * 0.9) * 0.035 : 0);
-
-    // scope rings, outermost first
-    nodes.forEach(function (n) {
-      var L = layout[n.id];
-      var pal = PALETTE[n.id];
-      var st = state[n.id];
-      var isSel = n.id === selectedId;
-      var isHover = n.id === hoverId;
-      var inChain = related[n.id];
-      var dim = !inChain ? 0.45 : 1;
-
-      // contraction: the scope tightens to its real attenuated size
-      var contract = st.contract;
-      // 10% is the most a child ring may grow and still stay inside its parent
-      var radius = L.r * (1 + 0.10 * (1 - contract));
-
-      var alphaFill = (isSel ? 0.07 : 0.035) * dim;
-      var alphaRim = (isSel ? 0.9 : 0.42) * dim * breathe;
-
-      if (isSel) {
-        // soft glow: concentric low-alpha rings
-        for (var g = 3; g >= 1; g--) {
-          prims.push({
-            x: L.x, y: L.y, w: (radius + g * 7) * 2, h: (radius + g * 7) * 2, rot: 0,
-            color: [pal.rim[0], pal.rim[1], pal.rim[2], 0.05 * dim],
-            shape: "ring", extra: 0.004
-          });
-        }
-      }
-      if (isHover) {
-        prims.push({
-          x: L.x, y: L.y, w: (radius + 3) * 2, h: (radius + 3) * 2, rot: 0,
-          color: [pal.rim[0], pal.rim[1], pal.rim[2], 0.3],
-          shape: "ring", extra: 0.006
-        });
-      }
-
-      prims.push({
-        x: L.x, y: L.y, w: radius * 2, h: radius * 2, rot: 0,
-        color: [pal.fill[0], pal.fill[1], pal.fill[2], alphaFill],
-        shape: "disc"
-      });
-      prims.push({
-        x: L.x, y: L.y, w: radius * 2, h: radius * 2, rot: 0,
-        color: [pal.rim[0], pal.rim[1], pal.rim[2], alphaRim],
-        shape: "ring",
-        extra: 0.008,
-        dash: n.id === "n-tool-temp" ? Math.max(6, Math.round(radius / 6)) : 0
-      });
-
-      // rejection flash on the offending scope
-      if (st.flash > 0) {
-        prims.push({
-          x: L.x, y: L.y, w: radius * 2, h: radius * 2, rot: 0,
-          color: [RED[0], RED[1], RED[2], st.flash * 0.5],
-          shape: "ring", extra: 0.012
-        });
-      }
-
-      // shockwave
-      if (st.shock) {
-        prims.push({
-          x: st.shock.x, y: st.shock.y, w: st.shock.r * 2, h: st.shock.r * 2, rot: 0,
-          color: [RED[0], RED[1], RED[2], st.shock.alpha * 0.8],
-          shape: "ring", extra: 0.008
-        });
-      }
-    });
-
-    // delegation edges
-    nodes.forEach(function (n) {
-      if (!n.parent) return;
-      var a = layout[n.parent];
-      var b = layout[n.id];
-      if (!a || !b) return;
-      var dx = b.x - a.x;
-      var dy = b.y - a.y;
-      var len = Math.sqrt(dx * dx + dy * dy);
-      var ang = Math.atan2(dy, dx);
-      var dim = related[n.id] ? 1 : 0.4;
-      prims.push({
-        x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, w: len, h: 1.6, rot: ang,
-        color: [GOLD[0], GOLD[1], GOLD[2], 0.4 * dim],
-        shape: "segment"
-      });
-      prims.push({
-        x: b.x, y: b.y, w: 13, h: 13, rot: ang,
-        color: [GOLD[0], GOLD[1], GOLD[2], 0.75 * dim],
-        shape: "diamond"
-      });
-    });
-
-    // agent markers - shape carries the node type
-    nodes.forEach(function (n) {
-      var L = layout[n.id];
-      var pal = PALETTE[n.id];
-      var st = state[n.id];
-      var isSel = n.id === selectedId;
-      var isHover = n.id === hoverId;
-      var dim = related[n.id] ? 1 : 0.45;
-      var size = isSel ? 13 : 10;
-      if (st.pop > 0) size = 10 + st.pop * 10;
-      if (st.flash > 0) {
-        prims.push({
-          x: L.x, y: L.y, w: (size + 16) * 2, h: (size + 16) * 2, rot: 0,
-          color: [RED[0], RED[1], RED[2], st.flash * 0.35],
-          shape: "ring", extra: 0.008
-        });
-      }
-      prims.push({
-        x: L.x, y: L.y, w: size * 2, h: size * 2, rot: 0,
-        color: [pal.rim[0], pal.rim[1], pal.rim[2], 0.95 * dim],
-        shape: SHAPE_FOR[n.id]
-      });
-      if (isSel) {
-        prims.push({
-          x: L.x, y: L.y, w: (size + 9) * 2, h: (size + 9) * 2, rot: 0,
-          color: [pal.rim[0], pal.rim[1], pal.rim[2], 0.45],
-          shape: "ring", extra: 0.012
-        });
-      }
-    });
-
-    // idle drift - a couple of quiet motes, nothing else moves
-    idleParticles.forEach(function (p) {
-      prims.push({
-        x: p.x, y: p.y, w: 14, h: 14, rot: 0,
-        color: [GOLD[0], GOLD[1], GOLD[2], 0.12 * p.life],
-        shape: "disc"
-      });
-      prims.push({
-        x: p.x, y: p.y, w: 4, h: 4, rot: 0,
-        color: [GOLD[0], GOLD[1], GOLD[2], 0.5 * p.life],
-        shape: "disc"
-      });
-    });
-
-    // capability tokens and their short trails
-    tokens.forEach(function (tk) {
-      for (var i = tk.trail.length - 1; i >= 0; i--) {
-        var p = tk.trail[i];
-        var a = (1 - i / tk.trail.length) * 0.45;
-        prims.push({
-          x: p.x, y: p.y, w: 6, h: 6, rot: 0,
-          color: [GOLD[0], GOLD[1], GOLD[2], a],
-          shape: "disc"
-        });
-      }
-      var pos = tokenPosition(tk);
-      if (pos) {
-        prims.push({
-          x: pos.x, y: pos.y, w: 22, h: 22, rot: 0,
-          color: [GOLD[0], GOLD[1], GOLD[2], 0.18],
-          shape: "disc"
-        });
-        prims.push({
-          x: pos.x, y: pos.y, w: 9, h: 9, rot: 0,
-          color: [255, 246, 224, 0.95],
-          shape: "disc"
-        });
-      }
-    });
-
-    return prims;
-  }
-
-  function render() {
-    stage.beginFrame(elapsed);
-    stage.render(buildScene());
-    positionChips();
-  }
-
-  var labelPositions = {};
-
-  function positionChips() {
-    var W = stage ? stage.width : 800;
-    var H = stage ? stage.height : 560;
-    nodes.forEach(function (n) {
-      var el = document.getElementById("chip-" + n.id);
-      if (!el || !currentLayout) return;
-      var lp = labelPositions[n.id];
-      var w = el.offsetWidth || 120;
-      var cx = lp ? lp.x : currentLayout[n.id].x;
-      var cy = lp ? lp.y + lp.h / 2 + 14 : currentLayout[n.id].y + 26;
-      el.style.left = Math.max(w / 2 + 6, Math.min(W - w / 2 - 6, cx)) + "px";
-      el.style.top = Math.max(16, Math.min(H - 16, cy)) + "px";
-    });
-  }
-
-  function update(dt) {
-    elapsed += dt;
-    updateTokens(dt);
-    updateIdle(dt);
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Panel                                                                */
-  /* ------------------------------------------------------------------ */
-
-  function renderNodes() {
-    nodesEl.innerHTML = "";
-    nodes.forEach(function (n) {
-      var li = document.createElement("li");
-      var b = document.createElement("button");
-      b.type = "button";
-      b.setAttribute("aria-current", n.id === selectedId ? "true" : "false");
-      var glyph = document.createElement("span");
-      glyph.className = "shape-glyph";
-      glyph.style.color = "rgb(" + PALETTE[n.id].rim.join(",") + ")";
-      glyph.textContent = n.id === "n-alice" ? "■" : n.id === "n-tool" || n.id === "n-tool-temp" ? "●" : "◆";
-      var name = document.createElement("span");
-      name.textContent = n.label;
-      var role = document.createElement("span");
-      role.style.color = "var(--text-dim)";
-      role.style.marginLeft = "auto";
-      role.style.fontSize = "11px";
-      role.textContent = TYPE_LABEL[n.id];
-      b.appendChild(glyph);
-      b.appendChild(name);
-      b.appendChild(role);
-      b.addEventListener("click", function () { select(n.id); });
-      b.addEventListener("mouseenter", function () { hoverId = n.id; });
-      b.addEventListener("mouseleave", function () { hoverId = null; });
-      li.appendChild(b);
-      nodesEl.appendChild(li);
-    });
-  }
-
-  function renderSelected() {
-    var n = nodeById(selectedId);
-    if (!n) return;
-    selectedName.textContent = n.label;
-    var parent = n.parent ? nodeById(n.parent) : null;
-
-    var html = "";
-    html += "<dt>Agent</dt><dd>" + esc(n.label) + "</dd>";
-    html += "<dt>Type</dt><dd>" + esc(TYPE_LONG[n.id]) + "</dd>";
-    html += "<dt>SPIFFE ID</dt><dd>" + esc(n.spiffe) + "</dd>";
-    if (n.issuer) html += "<dt>Delegated by</dt><dd>" + esc(n.issuer) + "</dd>";
-    if (parent) html += "<dt>Narrowing</dt><dd>" + esc(A.caveatDiff(parent.caveats, n.caveats)) + "</dd>";
-    html += "</dl>";
-    kvEl.innerHTML = html;
-
-    scopesEl.innerHTML = "";
-    if (n.held) {
-      n.held.resources.forEach(function (r) {
-        var li = document.createElement("li");
-        li.innerHTML = "<em>resource</em> " + esc(r);
-        scopesEl.appendChild(li);
-      });
-      n.held.operations.forEach(function (o) {
-        var li = document.createElement("li");
-        li.innerHTML = "<em>operation</em> " + esc(o);
-        scopesEl.appendChild(li);
-      });
-    } else {
-      var li = document.createElement("li");
-      li.innerHTML = "<em>origin</em> holds no token scope - it is the root of authority";
-      scopesEl.appendChild(li);
-    }
-    n.caveats.forEach(function (c) {
-      if (c.kind !== "condition") return;
-      var li2 = document.createElement("li");
-      li2.innerHTML = "<em>condition</em> " + esc(c.value.time_before);
-      scopesEl.appendChild(li2);
-    });
-    if (n.condition) {
-      var li3 = document.createElement("li");
-      li3.style.color = "var(--text-dim)";
-      li3.textContent = n.condition;
-      scopesEl.appendChild(li3);
-    }
-  }
-
-  function esc(s) {
-    return String(s === null || s === undefined ? "" : s)
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
-
-  function select(id) {
-    selectedId = id;
-    renderNodes();
-    renderSelected();
-    updateLabelStates();
-    var n = nodeById(id);
-    if (n) {
-      live.textContent =
-        n.label + " selected. Scope: " +
-        (n.held ? n.held.resources.join(", ") + " - " + n.held.operations.join(", ") : "root of authority");
-    }
-  }
-
-  function updateLabelStates() {
-    var related = relatedTo(selectedId);
-    nodes.forEach(function (n) {
-      var el = labelEl(n.id);
-      if (!el) return;
-      el.className = "node-label" + (n.id === selectedId ? " is-active" : related[n.id] ? "" : " is-dim");
-    });
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* The two attempts                                                     */
-  /* ------------------------------------------------------------------ */
-
-  function tryWiden() {
-    var n = nodeById(selectedId);
-    var parent = n && n.parent ? nodeById(n.parent) : null;
-    if (!parent || !parent.held) {
-      showVerdict(
-        "rejected",
-        "No parent scope to widen from",
-        "The root of authority holds no delegated token, so there is nothing to widen.",
-        selectedId
-      );
-      return;
-    }
-    var parentScope = { kind: "scope", value: parent.held };
-    var attempt = A.widenedAttempt(parentScope);
-    var valid = A.isValidAttenuation(parent.caveats, [attempt]);
-    var diff = A.caveatDiff(parent.caveats, [attempt]);
-
-    if (!valid) {
-      var exceeded = [];
-      var parentResources = parent.held.resources || [];
-      var parentOps = parent.held.operations || [];
-      (attempt.value.resources || []).forEach(function (r) {
-        var covered = parentResources.some(function (pr) { return A.pathNarrow(r, pr); });
-        if (!covered) exceeded.push('resource "' + r + '" is outside "' + (parentResources.join(", ") || "no resources") + '"');
-      });
-      (attempt.value.operations || []).forEach(function (o) {
-        if (parentOps.indexOf(o) === -1) {
-          exceeded.push('operation "' + o + '" is not in "' + (parentOps.join(", ") || "no operations") + '"');
-        }
-      });
-
-      // the token stops at the boundary: shockwave + flash on the offending scope
-      var st = state[selectedId];
-      st.flash = 1;
-      if (currentLayout) {
-        var L = currentLayout[selectedId];
-        var PL = currentLayout[n.parent];
-        var ang = Math.atan2(L.y - PL.y, L.x - PL.x);
-        st.shock = {
-          x: PL.x + Math.cos(ang) * PL.r,
-          y: PL.y + Math.sin(ang) * PL.r,
-          r: 12,
-          alpha: 1
-        };
-      }
-      showChip(selectedId, diff + " (expansion, blocked)", "rejected");
-      showVerdict(
-        "rejected",
-        "Rejected - " + A.violationMessage,
-        exceeded.join("; ") + ". attempted: " + diff + " (expansion, blocked)",
-        selectedId
-      );
-    } else {
-      showVerdict("issued", "Issued - the attempt was a valid narrowing", "attempted: " + diff, selectedId);
-    }
-  }
-
-  function tryNarrow() {
-    var n = nodeById(selectedId);
-    var parent = n && n.parent ? nodeById(n.parent) : null;
-    if (!parent || !parent.held) {
-      showVerdict(
-        "rejected",
-        "No parent scope to narrow from",
-        "The root of authority holds no delegated token.",
-        selectedId
-      );
-      return;
-    }
-    var parentResources = parent.held.resources || [];
-    var parentOps = parent.held.operations || [];
-    if (!parentResources.length) {
-      showVerdict("rejected", "Nothing to narrow", "The parent holds no resources.", selectedId);
-      return;
-    }
-    var first = parentResources[0];
-    var childResource;
-    if (first.slice(-2) === "/*") childResource = first.slice(0, -2) + "/narrowed-item";
-    else if (first.slice(-3) === "/**") childResource = first.slice(0, -3) + "/narrowed-item";
-    else childResource = first;
-    var child = {
-      kind: "scope",
-      value: {
-        resources: [childResource],
-        operations: parentOps.length ? [parentOps[0]] : []
-      }
-    };
-    var valid = A.isValidAttenuation(parent.caveats, [child]);
-    var diff = A.caveatDiff(parent.caveats, [child]);
-    if (valid) {
-      // a valid narrowing: the scope contracts and a new token is issued
-      var st = state[selectedId];
-      st.contract = 0;
-      st.contractTarget = 1;
-      st.pop = 1;
-      showChip(selectedId, diff + " (issued)", "info");
-      showVerdict("issued", "Issued - narrowing is allowed", "attempted: " + diff, selectedId);
-    } else {
-      showVerdict("rejected", "Rejected - " + A.violationMessage, "attempted: " + diff, selectedId);
-    }
-  }
-
-  function showVerdict(kind, message, detail, nodeId) {
-    verdictEl.className = "verdict show " + kind;
-    verdictEl.innerHTML = "<strong>" + esc(message) + "</strong><code>" + esc(detail) + "</code>";
-    live.textContent = message + " " + detail;
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Interaction                                                         */
-  /* ------------------------------------------------------------------ */
-
-  function nodeAt(x, y) {
-    var best = null;
-    var bestD = Infinity;
-    nodes.forEach(function (n) {
-      var L = currentLayout ? currentLayout[n.id] : null;
-      if (!L) return;
-      var dx = L.x - x;
-      var dy = L.y - y;
-      var d = Math.sqrt(dx * dx + dy * dy);
-      var hit = Math.max(L.r, 18);
-      if (d < hit && d < bestD) {
-        bestD = d;
-        best = n;
-      }
-    });
-    return best;
-  }
-
-  function scopeTooltipText(n) {
-    var lines = [];
-    if (n.held) {
-      lines.push("resources: " + n.held.resources.join(", "));
-      lines.push("operations: " + n.held.operations.join(", "));
-    } else {
-      lines.push("root of authority - holds no token scope");
-    }
-    var parent = n.parent ? nodeById(n.parent) : null;
-    if (parent) lines.push("narrowing: " + A.caveatDiff(parent.caveats, n.caveats));
-    return lines;
-  }
-
-  canvas.addEventListener("click", function (event) {
-    var rect = canvas.getBoundingClientRect();
-    var n = nodeAt(event.clientX - rect.left, event.clientY - rect.top);
-    if (n) select(n.id);
-  });
-
-  canvas.addEventListener("mousemove", function (event) {
-    var rect = canvas.getBoundingClientRect();
-    var mx = event.clientX - rect.left;
-    var my = event.clientY - rect.top;
-    var n = nodeAt(mx, my);
-    hoverId = n ? n.id : null;
-    if (n) {
-      var lines = scopeTooltipText(n);
-      tooltip.style.display = "block";
-      tooltip.style.left = Math.min(mx + 14, canvas.clientWidth - 290) + "px";
-      tooltip.style.top = Math.max(6, my - 12) + "px";
-      tooltip.innerHTML =
-        '<div class="t-title">' + esc(n.label) + " · " + esc(TYPE_LONG[n.id]) + "</div>" +
-        lines.map(function (l) { return '<div class="t-line">' + esc(l) + "</div>"; }).join("");
-    } else {
-      tooltip.style.display = "none";
-    }
-  });
-
-  canvas.addEventListener("mouseleave", function () {
-    tooltip.style.display = "none";
-    hoverId = null;
-  });
-
-  canvas.addEventListener("keydown", function (event) {
-    var idx = nodes.map(function (n) { return n.id; }).indexOf(selectedId);
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-      event.preventDefault();
-      select(nodes[Math.min(idx + 1, nodes.length - 1)].id);
-    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-      event.preventDefault();
-      select(nodes[Math.max(idx - 1, 0)].id);
-    }
-  });
-
-  var playBtn = document.getElementById("play");
-  function setPlaying(next) {
-    playing = next;
-    if (loop) {
-      if (playing) {
-        loop.play();
-        if (!flows.length && !tokens.length) startFlows();
-      } else {
-        loop.pause();
-      }
-    }
-    playBtn.textContent = playing ? "Pause" : "Play";
-    playBtn.setAttribute("aria-pressed", playing ? "true" : "false");
-  }
-  playBtn.addEventListener("click", function () { setPlaying(!playing); });
-
-  document.getElementById("replay").addEventListener("click", function () {
-    startFlows();
-    setPlaying(true);
-    live.textContent = "Replaying the delegation from Alice.";
-  });
-
-  var speedInput = document.getElementById("speed");
-  speedInput.addEventListener("input", function () {
-    speed = parseFloat(speedInput.value);
-    document.getElementById("speed-val").textContent = speed.toFixed(2) + "x";
-  });
-
-  document.getElementById("widen").addEventListener("click", tryWiden);
-  document.getElementById("narrow").addEventListener("click", tryNarrow);
-
-  window.addEventListener("keydown", function (event) {
-    if (event.code === "Space" && event.target === document.body) {
-      event.preventDefault();
-      setPlaying(!playing);
-    }
-  });
-
-  window.addEventListener("resize", function () {
-    stage.resize();
-    currentLayout = computeLayout();
-  });
-
-  /* ------------------------------------------------------------------ */
-  /* Boot                                                                */
-  /* ------------------------------------------------------------------ */
-
-  function createLabels() {
-    var host = canvas.parentNode;
-    nodes.forEach(function (n) {
-      var el = document.createElement("div");
-      el.className = "node-label";
-      el.setAttribute("data-node", n.id);
-      var label = document.createElement("span");
-      label.textContent = n.label;
-      var role = document.createElement("small");
-      role.textContent = TYPE_LABEL[n.id];
-      el.appendChild(label);
-      el.appendChild(role);
-      host.appendChild(el);
-
-      var chip = document.createElement("div");
-      chip.className = "chip";
-      chip.id = "chip-" + n.id;
-      host.appendChild(chip);
-    });
-  }
-
-  WebGPULab.createStage(canvas, {}).then(function (result) {
-    stage = result.stage;
-    var banner = document.getElementById("fallback-banner");
-    if (result.mode === "canvas2d") {
-      banner.style.display = "block";
-      banner.innerHTML =
-        "<strong>Canvas2D fallback.</strong> This demo needs WebGPU for the GPU-rendered version - try recent Chrome or Edge. " +
-        "The same diagram is drawn with the 2D fallback so the idea stays visible. (" + esc(result.error) + ")";
-    }
-    createLabels();
-    renderNodes();
-    renderSelected();
-    updateLabelStates();
-    currentLayout = computeLayout();
-    placeLabels(currentLayout);
-
-    loop = WebGPULab.createLoop({
-      reduced: reduced,
-      update: function (dt) { update(dt * speed); },
-      render: render
-    });
-    loop.start();
-
-    // reduced motion: static view, visible Play button to opt in
-    if (reduced) {
-      setPlaying(false);
-      live.textContent = "Motion is reduced. Press Play to animate the delegation.";
-    } else {
-      setPlaying(true);
-      startFlows();
-    }
-  });
-
-  /* small hook so the verification script can render the very same scene
-     offscreen on the GPU and read the pixels back (headless browsers do not
-     composite a WebGPU canvas into screenshots). */
-  window.__lab = {
-    get stage() { return stage; },
-    scene: function () { return buildScene(); }
-  };
-})();
-</script>
+<!--BUNDLE:delegation-tree.js-->
 </body>
 </html>
